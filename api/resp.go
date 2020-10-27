@@ -7,8 +7,8 @@ type CommPageResp struct {
 }
 
 type PageData struct {
-	TotalCount int           `json:"total_count"`
-	Items      []interface{} `json:"items"`
+	TotalCount int         `json:"total_count"`
+	Items      interface{} `json:"items"`
 }
 
 func ApiReturn(args ...interface{}) CommPageResp {
