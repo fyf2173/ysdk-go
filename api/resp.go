@@ -25,3 +25,11 @@ func ApiReturn(args ...interface{}) CommPageResp {
 	}
 	return CommPageResp{code, msg, data}
 }
+
+func EchoReturn(code int, msg string, data interface{}) *CommPageResp {
+	var ar = &CommPageResp{}
+	ar.Code = code
+	ar.Msg = msg
+	ar.Data = data
+	return ar
+}
