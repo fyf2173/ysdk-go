@@ -18,3 +18,11 @@ func GetRandString(n int) string {
 	}
 	return string(b)
 }
+
+// GetRandBetween 生成区间随机数
+func GetRandBetween(max, min int64) int64 {
+	if min > max || min == 0 || max == 0 {
+		return max
+	}
+	return rand.Int63n(max-min) + max
+}

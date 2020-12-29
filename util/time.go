@@ -11,3 +11,9 @@ func GetRunningTime() string {
 func StringToTime(timestr string) (time.Time, error) {
 	return time.Parse(TimeFormat[:len(timestr)], timestr)
 }
+
+// ParseTimestr 解析时间
+func ParseTimeStr(timeStr string) time.Time {
+	t, _ := time.ParseInLocation(TimeFormat, timeStr, time.Local)
+	return t
+}
