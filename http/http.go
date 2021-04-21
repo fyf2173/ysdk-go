@@ -12,9 +12,24 @@ import (
 	"time"
 )
 
-type Client struct {
+type DefaultClient struct {
 	http.Client
 	l log.Logger
+}
+
+type rqlog struct {
+	Ts     int64       `json:"t"`
+	Tm     time.Time   `json:"ft"`
+	Dur    int         `json:"dur"`
+	Link   string      `json:"link"`
+	Header interface{} `json:"header"`
+	Body   interface{} `json:"body"`
+	Resp   interface{} `json:"resp"`
+}
+
+func (rl *rqlog) String() string {
+	b, _ := json.Marshal(rl)
+	return string(b)
 }
 
 // NewClientWithCert 创建SSL链接客户端
@@ -45,49 +60,95 @@ func NewClientWithCert(pemCert, pemKey []byte) *http.Client {
 	return client
 }
 
-// doPost 提交请求
-func (c *Client) DoRequest(method, link string, header map[string]string, data interface{}, i interface{}) error {
+// NewClientDefault 创建普通客户端
+func NewClientDefault() *http.Client {
+	return http.DefaultClient
+}
+
+func (dc *DefaultClient) JsonRequest(link, method string, header map[string]string, data interface{}, i interface{}) error {
+	var (
+		rq rqlog
+		ts = time.Now().Nanosecond()
+		te = time.Now().Nanosecond()
+	)
+	defer func() {
+		rq.Header = header
+		rq.Body = data
+		rq.Resp = i
+		rq.Link = link
+		rq.Ts = time.Now().Unix()
+		rq.Tm = time.Now()
+		rq.Dur = (te - ts) / 1000000
+		dc.l.Println(rq.String())
+	}()
+	b, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest(method, link, bytes.NewBuffer(b))
+	if err != nil {
+		te = time.Now().Nanosecond()
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	for k, v := range header {
+		req.Header.Set(k, v)
+	}
+	resp, err := dc.Do(req)
+	if err != nil {
+		te = time.Now().Nanosecond()
+		return err
+	}
+	b, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		te = time.Now().Nanosecond()
+		return err
+	}
+	err = json.Unmarshal(b, i)
+	te = time.Now().Nanosecond()
+	return err
+}
+
+func (dc *DefaultClient) XmlRequest(link, method string, header map[string]string, data interface{}, i interface{}) error {
+	var (
+		rq rqlog
+		ts = time.Now().Nanosecond()
+		te = time.Now().Nanosecond()
+	)
+	defer func() {
+		rq.Header = header
+		rq.Body = data
+		rq.Resp = i
+		rq.Link = link
+		rq.Ts = time.Now().Unix()
+		rq.Tm = time.Now()
+		rq.Dur = (te - ts) / 1000000
+		dc.l.Println(rq.String())
+	}()
 	b, err := xml.Marshal(data)
 	if err != nil {
 		return err
 	}
 	req, err := http.NewRequest(method, link, bytes.NewBuffer(b))
 	if err != nil {
+		te = time.Now().Nanosecond()
 		return err
 	}
-
+	req.Header.Set("Content-Type", "application/xml")
 	for k, v := range header {
 		req.Header.Set(k, v)
 	}
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := c.Do(req)
+	resp, err := dc.Do(req)
 	if err != nil {
+		te = time.Now().Nanosecond()
 		return err
 	}
 	b, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
+		te = time.Now().Nanosecond()
 		return err
 	}
 	err = xml.Unmarshal(b, i)
-	c.l.Println(saveLogger(link, header, data, i))
+	te = time.Now().Nanosecond()
 	return err
-}
-
-func saveLogger(link string, header map[string]string, data interface{}, i interface{}) string {
-	var wplog struct {
-		Ts     int64       `json:"t"`
-		Tm     time.Time   `json:"ft"`
-		Link   string      `json:"link"`
-		Header interface{} `json:"header"`
-		Body   interface{} `json:"body"`
-		Resp   interface{} `json:"resp"`
-	}
-	wplog.Ts = time.Now().Unix()
-	wplog.Tm = time.Now()
-	wplog.Link = link
-	wplog.Header = header
-	wplog.Body = data
-	wplog.Resp = i
-	b, _ := json.Marshal(wplog)
-	return string(b)
 }

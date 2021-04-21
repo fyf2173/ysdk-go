@@ -42,3 +42,5 @@ type KD100Parameters struct {
 // KD100CallbackRequestBody 回调请求体
 type KD100CallbackRequestBody struct {
 }
+
+
