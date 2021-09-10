@@ -19,7 +19,7 @@ func NewEchoServer() *EchoServer {
 	}
 }
 
-func (es *EchoServer) Start(serverAddr string) {
+func (es *EchoServer) Start(serverAddr string) error {
 	// 启动服务
 	go func() {
 		es.srv.Start(serverAddr)
@@ -30,7 +30,7 @@ func (es *EchoServer) Start(serverAddr string) {
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt, os.Kill)
 	<-quit
-	es.srv.Shutdown(serverContext)
+	return es.srv.Shutdown(serverContext)
 }
 
 func (es *EchoServer) RegisterHandler(fn func(*echo.Echo)) {
