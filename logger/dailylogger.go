@@ -2,12 +2,13 @@ package logger
 
 import (
 	"fmt"
-	"github.com/fyf2173/ysdk-go/util"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/fyf2173/ysdk-go/util"
 
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/rs/zerolog"
