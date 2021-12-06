@@ -6,8 +6,8 @@ import (
 )
 
 type CommPageReq struct {
-	Page   int `json:"page"`
-	Limit  int `json:"limit"`
+	Page   int `json:"page" query:"page" form:"page"`
+	Limit  int `json:"limit" query:"limit" form:"limit"`
 	Offset int
 }
 
