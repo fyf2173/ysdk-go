@@ -1,10 +1,12 @@
 package excel
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -39,6 +41,33 @@ func ReadExcelLocalFile(filename string, ft *string) (interface{}, error) {
 
 	*ft = filepath.Ext(filename)
 	return openFromReader(f, *ft)
+}
+
+// ReadRemoteExcelFile 读取表单上传的excel文件内容，支持 .xlsx、.xls格式的文件
+// 如果上传的文件格式是.xlsx，则返回*xlsx.File，否则返回*xls.Workbook
+func ReadRemoteExcelFile(furl string, ft *string) (interface{}, error) {
+	*ft = filepath.Ext(furl)
+	if *ft != Xlsx && *ft != Xls {
+		return nil, fmt.Errorf("file not support")
+	}
+	resp, err := http.Get(furl)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf(resp.Status)
+	}
+	defer resp.Body.Close()
+
+	fBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if *ft == Xlsx {
+		return xlsx.OpenBinary(fBody)
+	}
+	return xls.OpenReader(bytes.NewReader(fBody))
 }
 
 // openFromReader 根据excel的文件后缀读取文件内容
