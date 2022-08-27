@@ -2,7 +2,6 @@ package ygin
 
 import (
 	"context"
-	"github.com/fyf2173/ysdk-go/webentry"
 	"os"
 	"os/signal"
 	"time"
@@ -40,29 +39,9 @@ func (gs *GinServer) Start(serverAddr string, wipesFn ...func()) error {
 }
 
 // RegisterHandler 注册路由方法
-func (gs *GinServer) RegisterHandler(fn func(*gin.Engine)) {
-	fn(gs.srv)
-	return
-}
-
-func (gs *GinServer) RegisterHandlerWithEntry(entries ...*webentry.Entry[gin.HandlerFunc]) {
-	for _, v := range entries {
-		gs.srv.RouterGroup.Handle(v.Method, v.Path, v.Handler)
+func (gs *GinServer) RegisterHandler(fns ...func(*gin.Engine)) {
+	for _, fn := range fns {
+		fn(gs.srv)
 	}
 	return
-}
-
-// RegisterHandlerWithEntryGroup 分组注册路由入口方法
-func (gs *GinServer) RegisterHandlerWithEntryGroup(g *gin.RouterGroup, entries ...*webentry.Entry[gin.HandlerFunc]) {
-	for _, v := range entries {
-		g.Handle(v.Method, v.Path, v.Handler)
-	}
-	return
-}
-
-// GroupHandler 分组处理
-func (gs *GinServer) GroupHandler(prefix string, mw ...gin.HandlerFunc) *gin.RouterGroup {
-	g := gs.srv.Group(prefix)
-	g.Use(mw...)
-	return g
 }

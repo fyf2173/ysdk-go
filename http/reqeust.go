@@ -3,7 +3,6 @@ package http
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -106,6 +105,9 @@ func Request(method, link string, params interface{}, resp interface{}, ops ...O
 	if err != nil {
 		return err
 	}
+	if params != nil {
+		ops = append(ops, JsonBody(params))
+	}
 	for _, op := range ops {
 		op(req)
 	}
@@ -115,16 +117,19 @@ func Request(method, link string, params interface{}, resp interface{}, ops ...O
 		return err
 	}
 
-	if response.StatusCode != 200 {
-		err := fmt.Errorf("接口【link=%+v】请求错误[status_code=%d]", link, response.StatusCode)
-		log.Printf("%s", err)
-		return err
-	}
+	// if response.StatusCode != 200 {
+	// 	err := fmt.Errorf("接口【link=%+v】请求错误[status_code=%d]", link, response.StatusCode)
+	// 	log.Printf("%s", err)
+	// 	return err
+	// }
 	defer response.Body.Close()
 	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Printf("读取数据出错，err=%+v", err)
 		return err
+	}
+	if resp == nil {
+		return nil
 	}
 	if err := json.Unmarshal(bodyBytes, &resp); err != nil {
 		log.Printf("解析数据出错，err=%+v", err)

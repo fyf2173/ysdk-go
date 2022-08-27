@@ -2,8 +2,6 @@ package yecho
 
 import (
 	"context"
-	"github.com/fyf2173/ysdk-go/webentry"
-	"net/http"
 	"os"
 	"os/signal"
 	"time"
@@ -40,28 +38,10 @@ func (es *EchoServer) Start(serverAddr string, wipesFn ...func()) error {
 }
 
 // RegisterHandler 注册路由方法
-func (es *EchoServer) RegisterHandler(fn func(*echo.Echo) http.Handler) {
-	es.srv.Server.Handler = fn(es.srv)
-	return
-}
-
-// RegisterHandlerWithEntry 注册路由路口方法
-func (es *EchoServer) RegisterHandlerWithEntry(entries ...*webentry.Entry[echo.HandlerFunc]) {
-	for _, v := range entries {
-		es.srv.Add(v.Method, v.Path, v.Handler)
+func (es *EchoServer) RegisterHandler(fns ...func(*echo.Echo)) {
+	for _, fn := range fns {
+		fn(es.srv)
 	}
+	es.srv.Server.Handler = es.srv
 	return
-}
-
-// RegisterHandlerWithEntryGroup 分组注册路由入口方法
-func (es *EchoServer) RegisterHandlerWithEntryGroup(g *echo.Group, entries ...*webentry.Entry[echo.HandlerFunc]) {
-	for _, v := range entries {
-		g.Add(v.Method, v.Path, v.Handler)
-	}
-	return
-}
-
-// GroupHandler 分组处理
-func (es *EchoServer) GroupHandler(prefix string, mw ...echo.MiddlewareFunc) *echo.Group {
-	return es.srv.Group(prefix, mw...)
 }
