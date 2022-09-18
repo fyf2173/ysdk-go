@@ -23,6 +23,16 @@ const (
 	ackPath      = "/v2/ack"
 )
 
+const (
+	defaultTenantId  = 568091687201
+	defaultNamespace = "Default"
+)
+
+// 此列表里的topic需设置默认的命名空间
+var mustNamespace = map[string]bool{
+	"jd_address_change": true,
+}
+
 type Header struct {
 	AccessKey string `json:"accessKey"`
 	Signature string `json:"signature"`
@@ -89,11 +99,15 @@ func NewClient(appKey string, tenantId int64, accessKey, accessSecret string) *C
 }
 
 func (jc *Client) WithTopic(topic string) *Client {
-	if jc.TenantId == 0 {
+	var tenantId = jc.TenantId
+	if _, ok := mustNamespace[topic]; ok && tenantId == 0 {
+		tenantId = defaultTenantId
+	}
+	if tenantId == 0 {
 		jc.Topic = fmt.Sprintf("open_message_%s_%s", topic, jc.AppKey)
 		return jc
 	}
-	jc.Topic = fmt.Sprintf("%d$%s$open_message_%s_%s", jc.TenantId, "Default", topic, jc.AppKey)
+	jc.Topic = fmt.Sprintf("%d$%s$open_message_%s_%s", tenantId, defaultNamespace, topic, jc.AppKey)
 	return jc
 }
 

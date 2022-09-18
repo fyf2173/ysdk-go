@@ -27,6 +27,7 @@ type JdAccessTokenResponse struct {
 }
 
 // AccessToken 获取token
+// {"access_token":"9097002316914b3583f3499fa9ad7d69xota","expires_in":86400,"refresh_token":"ab87a46362ea4e7799b5ee1c4f7bba41n2e0","scope":"snsapi_base","open_id":"49L4y3KtuV87ymNjRTXCB0vnEiY45eyiYwHmCz4zSkU","uid":"0201092577","time":1659322812128,"token_type":"bearer","code":0,"xid":"o*AATzS6F5-Y2HM3BqNKz0ZQ9LMmZkNScOYrCptRUJNvvGC6j2970"}
 func (ac *AccessClient) AccessToken(code string) (*JdAccessTokenResponse, error) {
 	var response JdAccessTokenResponse
 	link := fmt.Sprintf(AccessToken, ac.AppKey, ac.AppSecret, code)

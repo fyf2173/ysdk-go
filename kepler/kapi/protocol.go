@@ -1,5 +1,7 @@
 package kapi
 
+import "github.com/google/uuid"
+
 type Protocol struct {
 	CustomerId int64  `json:"customerId"`
 	ChannelId  int64  `json:"channelId"`
@@ -22,5 +24,10 @@ func (ptl *Protocol) WithClientIP(clientIp string) *Protocol {
 
 func (ptl *Protocol) WithOpName(opName string) *Protocol {
 	ptl.OpName = opName
+	return ptl
+}
+
+func (ptl *Protocol) WithTraceId() *Protocol {
+	ptl.TraceId = uuid.NewString()
 	return ptl
 }

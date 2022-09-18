@@ -13,6 +13,19 @@ func (kc *Client) GetSkuList(req QuerySkuListReq) (*QuerySkuListResp, error) {
 	return &response, nil
 }
 
+// GetBrotherSkus 获取兄弟sku列表
+func (kc *Client) GetBrotherSkus(req QueryBrotherSkuListReq) ([]*QueryBrotherSkuListItem, error) {
+	paramsMap := make(map[string]interface{})
+	paramsMap["ctpProtocol"] = kc.GetProtocolParams().WithCustomer(kc.CustomerID).WithTraceId()
+	paramsMap["apiBrotherListParam"] = req
+
+	var response []*QueryBrotherSkuListItem
+	if err := kc.Request(GetSkuListPath, paramsMap, &response); err != nil {
+		return nil, err
+	}
+	return response, nil
+}
+
 // GetSkuDetail 获取sku详情
 func (kc *Client) GetSkuDetail(req QuerySkuDetailReq) ([]*QuerySkuDetailResp, error) {
 	paramsMap := make(map[string]interface{})
