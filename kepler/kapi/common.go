@@ -600,8 +600,7 @@ type AfsSupportedTypeItem struct {
 
 type QueryApplyReasonsReq struct {
 	CanApplyInfoReq
-	OrderId int64 `json:"orderId" desc:"售后服务单对应的京东订单号
-	"`
+	OrderId int64 `json:"orderId" desc:"售后服务单对应的京东订单号"`
 }
 
 type ApplyReasonItem struct {
@@ -649,4 +648,57 @@ type GetAfsLogisticAddressResp struct {
 	ContactsZipCode string `json:"contactsZipCode"`
 	ContactsName    string `json:"contactsName"`
 	ContactsMobile  string `json:"contactsMobile"`
+}
+
+type PostBackLogisitcBillReq struct {
+	Pin              string `json:"pin"`
+	AfsServiceId     int64  `json:"afsServiceId"`
+	LogisticsCompany string `json:"logisticsCompany"`
+	WaybillCode      string `json:"waybillCode"`
+	SendGoodsDate    string `json:"sendGoodsDate"`
+}
+
+type PostBackLogisitcBillResp struct {
+	PostBackResult bool   `json:"postBackResult"`
+	Message        string `json:"message"`
+}
+
+type AfsServiceDetailResp struct {
+	AfsTypeName         string                       `json:"afsTypeName"`
+	OrderId             int64                        `json:"orderId"`
+	ApplyReasonId       int                          `json:"applyReasonId"`
+	ProcessNotes        string                       `json:"processNotes" desc:"售后服务单处理意见"`
+	AfsType             int                          `json:"afsType"`
+	AfsServiceStep      int                          `json:"afsServiceStep"`
+	DesenCustomerMobile string                       `json:"desen_customerMobile"`
+	ProcessedDate       int64                        `json:"processedDate"`
+	Pin                 string                       `json:"pin"`
+	ApproveResult       int                          `json:"approveResult"`
+	ApplyReasonName     string                       `json:"applyReasonName"`
+	CustomerEmail       string                       `json:"customerEmail"`
+	AfsServiceState     int                          `json:"afsServiceState" desc:"服务单状态"`
+	ApproveResultName   string                       `json:"approveResultName" desc:"售后服务单审核结果"`
+	ApproveNotes        string                       `json:"approveNotes" desc:"售后服务单审核意见"`
+	ProcessResult       int                          `json:"processResult" desc:"售后服务单审核时间"`
+	AfsServiceId        int64                        `json:"afsServiceId"`
+	AfsApplyTime        int64                        `json:"afsApplyTime"`
+	AfsApplyId          int64                        `json:"afsApplyId"`
+	CustomerName        string                       `json:"customerName"`
+	ApprovedDate        int64                        `json:"approvedDate"`
+	AfsServiceStateName string                       `json:"afsServiceStateName"`
+	ProcessResultName   string                       `json:"processResultName" desc:"售后服务单处理结果"`
+	AfsServiceStepName  string                       `json:"afsServiceStepName" desc:"售后服务单状态"`
+	NewOrderId          int64                        `json:"newOrderId" desc:"售后换新单订单号"`
+	CustomerMobile      string                       `json:"customerMobile" desc:"用户联系方式（售后联系人联系方式）"`
+	QuestionPic         string                       `json:"questionPic" desc:"售后申请问题描述图片"`
+	ReturnWareType      int                          `json:"returnWareType" desc:"售后返件类型 1：客户发货"`
+	SkuQuantity         *AfsServiceDetailSkuQuantity `json:"skuQuantity"`
+}
+
+type AfsServiceDetailSkuQuantity struct {
+	SkuName      string `json:"skuName"`
+	Quantity     int    `json:"quantity"`     //退换货数量
+	SkuType      int    `json:"skuType"`      //标识商品属性1单品、2买赠：赠品套装中的主商品、3买赠：赠品套装中的赠品
+	ValidNumFlag int    `json:"validNumFlag"` //赠品申请标识 1代表申请了，0代表没申请或释放了，后续可以继续申请
+	SkuId        int64  `json:"skuId"`
 }

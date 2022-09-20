@@ -1,5 +1,7 @@
 package kapi
 
+import "fmt"
+
 // QueryCanApplyInfo 查询是否可售后详情
 func (kc *Client) QueryCanApplyInfo(req CanApplyInfoReq) (*CanApplyInfoItem, error) {
 	paramsMap := make(map[string]interface{})
@@ -56,4 +58,37 @@ func (kc *Client) GetAfsLogisticAddress(afsServiceId int64) (*GetAfsLogisticAddr
 		return nil, err
 	}
 	return response, nil
+}
+
+// PostBackLogisitcBill 回传客户发货信息
+func (kc *Client) PostBackLogisitcBill(req PostBackLogisitcBillReq) (bool, error) {
+	paramsMap := make(map[string]interface{})
+	paramsMap["ctpProtocol"] = kc.GetProtocolParams()
+	req.Pin = kc.Pin
+	paramsMap["logisticsBillParam"] = req
+
+	var response *PostBackLogisitcBillResp
+	if err := kc.Request(AfsApplyCreate, paramsMap, &response); err != nil {
+		return false, err
+	}
+	if response.PostBackResult == false {
+		return false, fmt.Errorf(response.Message)
+	}
+	return response.PostBackResult, nil
+}
+
+// QueryAfsServiceDetail 查询服务单详情
+func (kc *Client) QueryAfsServiceDetail(afsServiceId int64) (*AfsServiceDetailResp, error) {
+	paramsMap := make(map[string]interface{})
+	paramsMap["ctpProtocol"] = kc.GetProtocolParams()
+	paramsMap["afsServiceDetailParam"] = map[string]interface{}{
+		"afsServiceId": afsServiceId,
+		"pin":          kc.Pin,
+	}
+
+	var response AfsServiceDetailResp
+	if err := kc.Request(AfsApplyCreate, paramsMap, &response); err != nil {
+		return nil, err
+	}
+	return &response, nil
 }
