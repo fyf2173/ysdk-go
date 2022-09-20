@@ -105,7 +105,7 @@ func (kc *Client) Request(apiMethod string, params interface{}, response interfa
 		return err
 	}
 	if errResp, ok := resp["error_response"]; ok {
-		return fmt.Errorf("code=%s，msg=%s", errResp.Code, errResp.ZhDesc)
+		return fmt.Errorf("code=%s,msg=%s", errResp.Code, errResp.ZhDesc)
 	}
 	data, ok := resp[responseField]
 	if !ok {

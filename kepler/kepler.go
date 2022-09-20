@@ -18,7 +18,6 @@ type Config struct {
 	MqAccessSecret string
 	MqTenantId     int64
 	MqGroupId      string
-	MqFlag         int // 是否都订阅了必须订阅的topic，0-否，1-是
 }
 
 type Option func(conf *Config)
@@ -80,7 +79,7 @@ func NewKepler(appKey, appSecret string, opts ...Option) *Config {
 }
 
 func (conf *Config) NewJcqClient() *jcq.Client {
-	if conf.MqAccessKey == "" || conf.MqAccessSecret == "" || conf.MqGroupId == "" || conf.MqFlag == 0 {
+	if conf.MqAccessKey == "" || conf.MqAccessSecret == "" || conf.MqGroupId == "" {
 		return nil
 	}
 	return jcq.NewClient(conf.AppKey, conf.MqTenantId, conf.MqAccessKey, conf.MqAccessSecret).WithGroupId(conf.MqGroupId)
