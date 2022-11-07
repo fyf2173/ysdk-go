@@ -3,7 +3,6 @@ package db
 import (
 	"github.com/jmoiron/sqlx"
 	"gorm.io/driver/mysql"
-	_ "gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
@@ -20,6 +19,11 @@ func OrmInstance() *gorm.DB {
 func InitGorm(env string, cfg DbConfig) (err error) {
 	gormConn, err = gorm.Open(newMysqlDial(cfg), newMysqlConf(env, cfg.Log))
 	return err
+}
+
+// NewGorm 实例话一个gorm连接
+func NewGorm(env string, cfg DbConfig) (*gorm.DB, error) {
+	return gorm.Open(newMysqlDial(cfg), newMysqlConf(env, cfg.Log))
 }
 
 // newMysqlDial mysql连接器

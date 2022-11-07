@@ -1,13 +1,10 @@
 package crypto
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
-	"fmt"
-	yapi "github.com/fyf2173/ysdk-go/api"
-	"golang.org/x/crypto/bcrypt"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 func HashSalt(password []byte) string {
@@ -18,22 +15,19 @@ func HashSalt(password []byte) string {
 	return string(b)
 }
 
-func VerifyPassword(hashPassword, password []byte) bool {
+func VerifyPassword(hashPassword, password []byte) (bool, error) {
 	var err error
 	if err = bcrypt.CompareHashAndPassword(hashPassword, password); err == nil {
-		return true
+		return true, nil
 	}
-	fmt.Println("auth failed, error: ", err.Error())
-	return false
+	return false, err
 }
 
-func GenerateToken(username string) string {
+func GenerateToken(username string, realIp string) string {
 	var data = make(map[string]interface{})
-	data["ip"] = yapi.GetRealIp()
+	data["ip"] = realIp
 	data["t"] = time.Now().Unix()
 	data["username"] = username
 	b, _ := json.Marshal(data)
-	hash := md5.New()
-	hash.Write(b)
-	return hex.EncodeToString(hash.Sum(nil))
+	return Md5Str(string(b))
 }

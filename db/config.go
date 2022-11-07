@@ -32,8 +32,3 @@ type RedisConfig struct {
 	ReadTimeOut    int    `json:"read_time_out" yaml:"read_time_out"`
 	WriteTimeOut   int    `json:"write_time_out" yaml:"write_time_out"`
 }
-
-type SqliteConfig struct {
-	Dsn string `json:"dsn" yaml:"dsn"`
-	Log bool   `json:"log" yaml:"log"`
-}

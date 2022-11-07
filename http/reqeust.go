@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -117,11 +118,11 @@ func Request(method, link string, params interface{}, resp interface{}, ops ...O
 		return err
 	}
 
-	// if response.StatusCode != 200 {
-	// 	err := fmt.Errorf("接口【link=%+v】请求错误[status_code=%d]", link, response.StatusCode)
-	// 	log.Printf("%s", err)
-	// 	return err
-	// }
+	if response.StatusCode != 200 {
+		err := fmt.Errorf("接口【link=%+v】请求错误[status_code=%d]", link, response.StatusCode)
+		log.Printf("%s", err)
+		return err
+	}
 	defer response.Body.Close()
 	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {

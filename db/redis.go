@@ -24,7 +24,16 @@ func RedsyncInstance() *redsync.Redsync {
 
 // InitRedisClient 初始化客户端
 func InitRedisClient(cfg RedisConfig) {
-	redisCli = &redis.Pool{
+	redisCli = NewRedisPool(cfg)
+	initRedsync()
+}
+
+func initRedsync() {
+	redlock = redsync.New([]redsync.Pool{redisCli})
+}
+
+func NewRedisPool(cfg RedisConfig) *redis.Pool {
+	pool := &redis.Pool{
 		Dial: func() (redis.Conn, error) {
 			var opts = []redis.DialOption{
 				redis.DialConnectTimeout(time.Millisecond * time.Duration(cfg.ConnectTimeOut)),
@@ -39,11 +48,11 @@ func InitRedisClient(cfg RedisConfig) {
 		MaxActive:   1024,
 		IdleTimeout: time.Minute,
 	}
-	initRedsync()
+	return pool
 }
 
-func initRedsync() {
-	redlock = redsync.New([]redsync.Pool{redisCli})
+func NewRedSync(pool *redis.Pool) *redsync.Redsync {
+	return redsync.New([]redsync.Pool{redisCli})
 }
 
 // RedisLock 分布式锁
