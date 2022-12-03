@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	yhttp "github.com/fyf2173/ysdk-go/http"
+	"github.com/fyf2173/ysdk-go/xhttp"
 )
 
 const (
@@ -45,7 +45,7 @@ func (al *Alert) SendText(content string) error {
 	}
 
 	var resp interface{}
-	if err := yhttp.Request("POST", al.Url(), req, resp); err != nil {
+	if err := xhttp.Request("POST", al.Url(), req, resp); err != nil {
 		return err
 	}
 	return nil
@@ -115,7 +115,7 @@ func (al *Alert) SendMarkdown(content string) error {
 	}
 
 	var resp interface{}
-	if err := yhttp.Request("POST", al.Url(), req, resp); err != nil {
+	if err := xhttp.Request("POST", al.Url(), req, resp); err != nil {
 		return err
 	}
 	return nil
