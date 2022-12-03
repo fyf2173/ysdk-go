@@ -45,8 +45,8 @@ func ExitError(err error) *CommResp {
 	return ar
 }
 
-func ExitSuccess(data interface{}, message string) *CommResp {
-	var ar = &CommResp{Code: 0, Msg: message, Data: data}
+func ExitSuccess(data interface{}) *CommResp {
+	var ar = &CommResp{Code: 0, Msg: "ok", Data: data}
 	return ar
 }
 

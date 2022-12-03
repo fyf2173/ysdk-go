@@ -48,6 +48,23 @@ func Assert(err error) {
 	}
 }
 
+func MultiAssert(errs ...error) {
+	for _, err := range errs {
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func MultiCheck(errs ...error) error {
+	for i := 0; i <= len(errs)-1; i++ {
+		if errs[i] != nil {
+			return errs[i]
+		}
+	}
+	return nil
+}
+
 func PickUnusedPort() (int, error) {
 	addr, err := net.ResolveTCPAddr("tcp", "127.0.0.1:0")
 	if err != nil {

@@ -51,8 +51,8 @@ func NewRedisPool(cfg RedisConfig) *redis.Pool {
 	return pool
 }
 
-func NewRedSync(pool *redis.Pool) *redsync.Redsync {
-	return redsync.New([]redsync.Pool{redisCli})
+func NewRedSync(cli *redis.Pool) *redsync.Redsync {
+	return redsync.New([]redsync.Pool{cli})
 }
 
 // RedisLock 分布式锁
