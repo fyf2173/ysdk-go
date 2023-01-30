@@ -14,7 +14,7 @@ import (
 
 type DefaultClient struct {
 	http.Client
-	l log.Logger
+	l *log.Logger
 }
 
 type rqlog struct {
@@ -61,8 +61,11 @@ func NewClientWithCert(pemCert, pemKey []byte) *http.Client {
 }
 
 // NewClientDefault 创建普通客户端
-func NewClientDefault() *http.Client {
-	return http.DefaultClient
+func NewClientDefault(logger *log.Logger) *DefaultClient {
+	return &DefaultClient{
+		Client: *http.DefaultClient,
+		l: logger,
+	}
 }
 
 func (dc *DefaultClient) JsonRequest(link, method string, header map[string]string, data interface{}, i interface{}) error {
@@ -79,7 +82,11 @@ func (dc *DefaultClient) JsonRequest(link, method string, header map[string]stri
 		rq.Ts = time.Now().Unix()
 		rq.Tm = time.Now()
 		rq.Dur = (te - ts) / 1000000
+		if dc.l == nil {
+			return
+		}
 		dc.l.Println(rq.String())
+		return
 	}()
 	b, err := json.Marshal(data)
 	if err != nil {

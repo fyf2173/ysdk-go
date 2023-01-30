@@ -106,9 +106,11 @@ func Validate(params interface{}) error {
 		validationErrors := err.(validator.ValidationErrors)
 		for _, v := range validationErrors {
 			structField, _ := reflectVal.Type().FieldByName(v.Field())
-			msg := structField.Tag.Get(v.Tag())
-			return fmt.Errorf(msg)
+			if msg := structField.Tag.Get(v.Tag()); msg != "" {
+				return fmt.Errorf(msg)
+			}
 		}
+		return err
 	}
 	return nil
 }
