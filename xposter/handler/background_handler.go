@@ -10,12 +10,10 @@ package handler
 
 import (
 	"fmt"
+	"github.com/fyf2173/ysdk-go/xposter/core"
 	"image"
 	"image/png"
 	"os"
-	"sync"
-
-	"github.com/fyf2173/ysdk-go/xposter/core"
 )
 
 // BackgroundHandler 背景图
@@ -28,15 +26,15 @@ type BackgroundHandler struct {
 }
 
 // Do 地址逻辑
-func (h *BackgroundHandler) Do(c *Context, wg *sync.WaitGroup) (err error) {
+func (h *BackgroundHandler) Do(c *Context) {
 	//获取背景 必须是PNG图
 	bgFile, err := os.Open(h.Path)
 	if err != nil {
-		fmt.Errorf("os.Open err：%s", err)
+		panic(fmt.Errorf("os.Open err：%s", err))
 	}
 	bgImage, err := png.Decode(bgFile)
 	if err != nil {
-		fmt.Errorf("png.Decode err：%v", err)
+		panic(fmt.Errorf("png.Decode err：%v", err))
 	}
 	bgPoint := image.Point{
 		X: h.X,

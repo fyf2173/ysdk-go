@@ -10,11 +10,9 @@ package handler
 
 import (
 	"fmt"
-	"image"
-	"sync"
-
 	"github.com/fyf2173/ysdk-go/xposter/circlemask"
 	"github.com/fyf2173/ysdk-go/xposter/core"
+	"image"
 )
 
 // ImageCircleRemoteHandler 根据URL地址设置圆形图片
@@ -33,14 +31,13 @@ type ImageCircleRemoteHandler struct {
 }
 
 // Do 地址逻辑
-func (h *ImageCircleRemoteHandler) Do(c *Context, wg *sync.WaitGroup) (err error) {
-	wg.Add(1)
+func (h *ImageCircleRemoteHandler) Do(c *Context) {
+	c.wg.Add(1)
 	go func() {
-
-		defer wg.Done()
+		defer c.wg.Done()
 		srcImage, err := core.GetResourceReader(h.URL, h.Width, h.Height)
 		if err != nil {
-			fmt.Errorf("core.GetResourceReader err：%v", err)
+			panic(fmt.Errorf("core.GetResourceReader err：%v", err))
 		}
 
 		// 算出图片的宽度和高试
@@ -66,5 +63,4 @@ func (h *ImageCircleRemoteHandler) Do(c *Context, wg *sync.WaitGroup) (err error
 		core.MergeImage(c.PngCarrier, srcMask, srcImage.Bounds().Min.Sub(srcPoint))
 		return
 	}()
-	return
 }

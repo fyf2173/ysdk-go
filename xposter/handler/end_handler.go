@@ -9,33 +9,37 @@
 package handler
 
 import (
-	"fmt"
-	"sync"
-
-	"github.com/fyf2173/ysdk-go/xposter/core"
+	"bytes"
+	"image/png"
+	"os"
 )
 
-// EndHandler 结束，写在最后，把图片合并到一张图上
-type EndHandler struct {
-	// 合成复用Next
+// BufferEndHandler 把图片输出为二进制
+type BufferEndHandler struct {
 	Next
-	Output string // "/tmp/xxx.png"
+	Output *bytes.Buffer
 }
 
-// Do 地址逻辑
-func (h *EndHandler) Do(c *Context, wg *sync.WaitGroup) (err error) {
-	wg.Wait()
+func (h BufferEndHandler) Do(c *Context) error {
+	c.wg.Wait()
+	return png.Encode(h.Output, c.PngCarrier)
+}
 
-	// 新建文件载体
-	//fileName := "poster-" + core.RandString(20) + ".png"
-	merged, err := core.NewMerged(h.Output)
+// FileEndHandler 把图片保存到指定路径
+type FileEndHandler struct {
+	Next
+	Filepath string
+}
+
+func (h FileEndHandler) Do(c *Context) {
+	c.wg.Wait()
+	nfi, err := os.Create(h.Filepath)
 	if err != nil {
-		fmt.Errorf("core.NewMerged err：%v", err)
+		panic(err)
 	}
-	// 合并
-	err = core.Merge(c.PngCarrier, merged)
-	if err != nil {
-		fmt.Errorf("core.Merge err：%v", err)
+	defer nfi.Close()
+	if err := png.Encode(nfi, c.PngCarrier); err != nil {
+		panic(err)
 	}
 	return
 }

@@ -9,10 +9,8 @@
 package handler
 
 import (
-	"image"
-	"sync"
-
 	"github.com/fyf2173/ysdk-go/xposter/core"
+	"image"
 )
 
 // ImageRectangleHandler 设置矩形图片
@@ -30,10 +28,10 @@ type ImageRectangleHandler struct {
 }
 
 // Do 地址逻辑
-func (h *ImageRectangleHandler) Do(c *Context, wg *sync.WaitGroup) (err error) {
-	wg.Add(1)
+func (h *ImageRectangleHandler) Do(c *Context) {
+	c.wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer c.wg.Done()
 		request := core.Rectangle{
 			R:      h.R,
 			G:      h.G,
@@ -52,5 +50,4 @@ func (h *ImageRectangleHandler) Do(c *Context, wg *sync.WaitGroup) (err error) {
 		core.MergeImage(c.PngCarrier, im, im.Bounds().Min.Sub(srcPoint))
 		return
 	}()
-	return
 }

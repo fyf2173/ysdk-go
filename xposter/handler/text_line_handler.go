@@ -10,7 +10,6 @@ package handler
 
 import (
 	"image/color"
-	"sync"
 )
 
 // TextLineHandler 文本
@@ -28,10 +27,10 @@ type TextLineHandler struct {
 }
 
 // Do 地址逻辑
-func (h *TextLineHandler) Do(c *Context, wg *sync.WaitGroup) (err error) {
-	wg.Add(1)
+func (h *TextLineHandler) Do(c *Context) {
+	c.wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer c.wg.Done()
 
 		for i := h.X; i < h.X+h.Width; i++ {
 			for j := h.Y; j < h.Y+h.Height; j++ {
@@ -39,8 +38,5 @@ func (h *TextLineHandler) Do(c *Context, wg *sync.WaitGroup) (err error) {
 			}
 		}
 		return
-
 	}()
-
-	return
 }

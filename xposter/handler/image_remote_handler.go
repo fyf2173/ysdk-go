@@ -10,10 +10,8 @@ package handler
 
 import (
 	"fmt"
-	"image"
-	"sync"
-
 	"github.com/fyf2173/ysdk-go/xposter/core"
+	"image"
 )
 
 // ImageRemoteHandler 根据URL地址设置图片
@@ -28,13 +26,13 @@ type ImageRemoteHandler struct {
 }
 
 // Do 地址逻辑
-func (h *ImageRemoteHandler) Do(c *Context, wg *sync.WaitGroup) (err error) {
-	wg.Add(1)
+func (h *ImageRemoteHandler) Do(c *Context) {
+	c.wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer c.wg.Done()
 		srcImage, err := core.GetResourceReader(h.URL, h.Width, h.Height)
 		if err != nil {
-			fmt.Errorf("core.GetResourceReader err：%v", err)
+			panic(fmt.Errorf("core.GetResourceReader err：%v", err))
 		}
 
 		srcPoint := image.Point{
@@ -44,5 +42,4 @@ func (h *ImageRemoteHandler) Do(c *Context, wg *sync.WaitGroup) (err error) {
 		core.MergeImage(c.PngCarrier, srcImage, srcImage.Bounds().Min.Sub(srcPoint))
 		return
 	}()
-	return
 }

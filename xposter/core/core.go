@@ -188,14 +188,15 @@ func GetResourceReader(url string, width int, hight int) (newImg *image.RGBA, er
 		r = bytes.NewReader(fileBytes)
 	}
 	img, _, err := image.Decode(r)
+	return ResizeImage(img, width, hight), nil
+}
 
-	// 调用resize库进行图片缩放(高度填0，resize.Resize函数中会自动计算缩放图片的宽高比)
-	m := resize.Resize(uint(width), uint(hight), img, resize.Lanczos3)
-
-	newImg = NewPNG(0, 0, width, hight)                              //创建一个新RGBA图像
-	draw.Draw(newImg, newImg.Bounds(), m, m.Bounds().Min, draw.Over) //画上缩放后的图片
-
-	return newImg, nil
+// ResizeImage 图片缩放
+func ResizeImage(srcImage image.Image, width, height int) *image.RGBA {
+	m := resize.Resize(uint(width), uint(height), srcImage, resize.Lanczos3) // 调用resize库进行图片缩放(高度填0，resize.Resize函数中会自动计算缩放图片的宽高比)
+	dstImage := image.NewRGBA(image.Rect(0, 0, width, height))               //创建一个新RGBA图像
+	draw.Draw(dstImage, dstImage.Bounds(), m, m.Bounds().Min, draw.Over)     //画上缩放后的图片
+	return dstImage
 }
 
 // RandString 生成随机字符串

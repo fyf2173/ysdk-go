@@ -10,12 +10,10 @@ package handler
 
 import (
 	"fmt"
-	"image"
-	"os"
-	"sync"
-
 	"github.com/fyf2173/ysdk-go/xposter/circlemask"
 	"github.com/fyf2173/ysdk-go/xposter/core"
+	"image"
+	"os"
 )
 
 // ImageCircleLocalHandler 根据Path路径设置圆形图片
@@ -32,20 +30,19 @@ type ImageCircleLocalHandler struct {
 }
 
 // Do 地址逻辑
-func (h *ImageCircleLocalHandler) Do(c *Context, wg *sync.WaitGroup) (err error) {
-	wg.Add(1)
+func (h *ImageCircleLocalHandler) Do(c *Context) {
+	c.wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer c.wg.Done()
 
 		imageFile, err := os.Open(h.Path)
 		if err != nil {
-			fmt.Errorf("os.Open err：%v", err)
+			panic(fmt.Errorf("os.Open err：%v", err))
 		}
 
 		srcImage, _, err := image.Decode(imageFile)
-
 		if err != nil {
-			fmt.Errorf("SetRemoteImage image.Decode err：%v", err)
+			panic(fmt.Errorf("SetRemoteImage image.Decode err：%v", err))
 		}
 		// 算出图片的宽度和高试
 		width := srcImage.Bounds().Max.X - srcImage.Bounds().Min.X
@@ -61,7 +58,7 @@ func (h *ImageCircleLocalHandler) Do(c *Context, wg *sync.WaitGroup) (err error)
 			diameter = hight
 		}
 		// 遮罩
-		srcMask := circlemask.NewCircleMask(srcPng, image.Point{0, 0}, diameter, h.R, h.G, h.B, h.A)
+		srcMask := circlemask.NewCircleMask(srcPng, image.Point{}, diameter, h.R, h.G, h.B, h.A)
 
 		srcPoint := image.Point{
 			X: h.X,
@@ -70,5 +67,4 @@ func (h *ImageCircleLocalHandler) Do(c *Context, wg *sync.WaitGroup) (err error)
 		core.MergeImage(c.PngCarrier, srcMask, srcImage.Bounds().Min.Sub(srcPoint))
 		return
 	}()
-	return
 }

@@ -10,12 +10,10 @@ package handler
 
 import (
 	"fmt"
+	"github.com/fyf2173/ysdk-go/xposter/core"
 	"image"
 	"image/png"
 	"os"
-	"sync"
-
-	"github.com/fyf2173/ysdk-go/xposter/core"
 )
 
 // ImageLocalHandler 根据本地PATH设置图片
@@ -28,18 +26,18 @@ type ImageLocalHandler struct {
 }
 
 // Do 地址逻辑
-func (h *ImageLocalHandler) Do(c *Context, wg *sync.WaitGroup) (err error) {
-	wg.Add(1)
+func (h *ImageLocalHandler) Do(c *Context) {
+	c.wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer c.wg.Done()
 		//获取背景 必须是PNG图
 		imageFile, err := os.Open(h.Path)
 		if err != nil {
-			fmt.Errorf("os.Open err：%v", err)
+			panic(fmt.Errorf("os.Open err：%v", err))
 		}
 		srcImage, err := png.Decode(imageFile)
 		if err != nil {
-			fmt.Errorf("png.Decode err：%v", err)
+			panic(fmt.Errorf("png.Decode err：%v", err))
 		}
 		srcPoint := image.Point{
 			X: h.X,
@@ -48,5 +46,4 @@ func (h *ImageLocalHandler) Do(c *Context, wg *sync.WaitGroup) (err error) {
 		core.MergeImage(c.PngCarrier, srcImage, srcImage.Bounds().Min.Sub(srcPoint))
 		return
 	}()
-	return
 }

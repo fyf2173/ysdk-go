@@ -10,8 +10,6 @@ package handler
 
 import (
 	"fmt"
-	"sync"
-
 	"github.com/fyf2173/ysdk-go/xposter/core"
 )
 
@@ -30,10 +28,10 @@ type TextHandler struct {
 }
 
 // Do 地址逻辑
-func (h *TextHandler) Do(c *Context, wg *sync.WaitGroup) (err error) {
-	wg.Add(1)
+func (h *TextHandler) Do(c *Context) {
+	c.wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer c.wg.Done()
 
 		//设置字体切片
 		if h.Size == 0 {
@@ -42,17 +40,15 @@ func (h *TextHandler) Do(c *Context, wg *sync.WaitGroup) (err error) {
 
 		trueTypeFont, err := core.LoadTextType(h.FontPath)
 		if err != nil {
-			fmt.Errorf("core.LoadTextType err：%v", err)
+			panic(fmt.Errorf("core.LoadTextType err：%v", err))
 		}
 
 		dText := core.NewDrawText(c.PngCarrier)
 		//设置颜色
 		dText.SetColor(h.R, h.G, h.B)
-		err = dText.MergeText(h.Text, h.Size, trueTypeFont, h.X, h.Y)
-		if err != nil {
-			fmt.Errorf("dText.MergeText err：%v", err)
+
+		if err := dText.MergeText(h.Text, h.Size, trueTypeFont, h.X, h.Y); err != nil {
+			panic(fmt.Errorf("dText.MergeText err：%v", err))
 		}
-		return
 	}()
-	return
 }

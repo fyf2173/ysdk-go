@@ -10,7 +10,6 @@ package handler
 
 import (
 	"fmt"
-	"sync"
 	"testing"
 
 	"github.com/fyf2173/ysdk-go/xposter/core"
@@ -18,11 +17,7 @@ import (
 
 // TestNext_SetNext test
 func TestNext_SetNext(t *testing.T) {
-	nullHandler := &NullHandler{}
-	ctx := &Context{
-		//图片都绘在这个PNG载体上
-		PngCarrier: core.NewPNG(0, 0, 750, 1334),
-	}
+	ctx := NewContext(core.NewPNG(0, 0, 750, 1334))
 	//绘制背景图
 	backgroundHandler := &BackgroundHandler{
 		X:    0,
@@ -33,7 +28,7 @@ func TestNext_SetNext(t *testing.T) {
 	imageCircleHandler := &ImageCircleLocalHandler{
 		X:    30,
 		Y:    50,
-		Path: "./assets/reward.png",
+		Path: "../assets/reward.png",
 	}
 	//绘制本地图像
 	imageLocalHandler := &ImageLocalHandler{
@@ -96,12 +91,14 @@ func TestNext_SetNext(t *testing.T) {
 		A:      255,
 	}
 	//结束绘制，把前面的内容合并成一张图片
-	endHandler := &EndHandler{
-		Output: "../build/poster_" + core.RandString(20) + ".png",
+	endHandler := &FileEndHandler{
+		Filepath: "../build/poster_" + core.RandString(20) + ".png",
 	}
 
+	startHandler := NewNullHandler()
+
 	// 链式调用绘制过程
-	nullHandler.
+	startHandler.
 		SetNext(backgroundHandler).
 		SetNext(imageCircleHandler).
 		SetNext(textHandler1).
@@ -113,8 +110,7 @@ func TestNext_SetNext(t *testing.T) {
 		SetNext(endHandler)
 
 	// 开始执行业务
-	var wg sync.WaitGroup
-	if err := nullHandler.Run(ctx, &wg); err != nil {
+	if err := startHandler.Run(ctx); err != nil {
 		// 异常
 		fmt.Println("Fail | Error:" + err.Error())
 		return
