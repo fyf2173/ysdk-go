@@ -22,6 +22,7 @@ func NewGinServer() *GinServer {
 // Start 启动echo服务，并执行收尾工作
 func (gs *GinServer) Start(serverAddr string, wipesFn ...func()) error {
 	// 启动服务
+
 	go func() {
 		_ = gs.srv.Run(serverAddr)
 	}()
@@ -31,6 +32,7 @@ func (gs *GinServer) Start(serverAddr string, wipesFn ...func()) error {
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt, os.Kill)
 	<-quit
+
 	for _, fn := range wipesFn {
 		fn()
 	}

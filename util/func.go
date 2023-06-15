@@ -126,11 +126,11 @@ func GetRandString(n int) string {
 }
 
 // GetRandBetween 生成区间随机数
-func GetRandBetween(max, min int64) int64 {
+func GetRandBetween(min, max int64) int64 {
 	if min > max || min == 0 || max == 0 {
 		return max
 	}
-	return rand.Int63n(max-min) + max
+	return rand.Int63n(max-min) + min
 }
 
 // GbkToUtf8 transform GBK bytes to UTF-8 bytes

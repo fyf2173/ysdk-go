@@ -17,13 +17,13 @@ func OrmInstance() *gorm.DB {
 
 // InitGorm 初始化gorm
 func InitGorm(env string, cfg DbConfig) (err error) {
-	gormConn, err = gorm.Open(newMysqlDial(cfg), newMysqlConf(env, cfg.Log))
+	gormConn, err = gorm.Open(newMysqlDial(cfg), newMysqlConf(env, cfg))
 	return err
 }
 
 // NewGorm 实例话一个gorm连接
 func NewGorm(env string, cfg DbConfig) (*gorm.DB, error) {
-	return gorm.Open(newMysqlDial(cfg), newMysqlConf(env, cfg.Log))
+	return gorm.Open(newMysqlDial(cfg), newMysqlConf(env, cfg))
 }
 
 // newMysqlDial mysql连接器
@@ -38,15 +38,16 @@ func newMysqlDial(cfg DbConfig) gorm.Dialector {
 }
 
 // newMysqlConf 相关配置
-func newMysqlConf(env string, dbLog bool) *gorm.Config {
+func newMysqlConf(env string, cfg DbConfig) *gorm.Config {
 	gcf := &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
+			TablePrefix:   cfg.Prefix,
 		},
 		SkipDefaultTransaction: true,
 	}
 	logLevel := logger.Info
-	if env == "prod" || dbLog == false {
+	if env == "prod" || cfg.Log == false {
 		logLevel = logger.Silent
 	}
 	gcf.Logger = logger.Default.LogMode(logLevel)

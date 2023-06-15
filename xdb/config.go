@@ -8,6 +8,7 @@ type DbConfig struct {
 	Slaves    SlavesCfg `json:"slaves" yaml:"slaves"`
 	Pool      PoolCfg   `json:"pool" yaml:"pool"`
 	Log       bool      `json:"log" yaml:"log"`
+	Prefix    string    `json:"prefix" yaml:"prefix"`
 }
 
 //PoolCfg 连接池配置
