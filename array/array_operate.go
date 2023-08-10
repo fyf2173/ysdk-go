@@ -28,3 +28,33 @@ func GetColumns(haystack interface{}, field string) interface{} {
 	}
 	return rslice.Interface()
 }
+
+// ArrayPluck 按长度分组
+func ArrayPluck(src []interface{}, length int) (dst [][]interface{}) {
+	step := 0
+	for {
+		nextStep := step + length
+		if nextStep >= len(src) {
+			dst = append(dst, src[step:])
+			break
+		}
+		dst = append(dst, src[step:nextStep])
+		step = nextStep
+	}
+	return dst
+}
+
+// ArrayPluckByT 按长度分组
+func ArrayPluckByT[T any](src []T, length int) (dst [][]T) {
+	step := 0
+	for {
+		nextStep := step + length
+		if nextStep >= len(src) {
+			dst = append(dst, src[step:])
+			break
+		}
+		dst = append(dst, src[step:nextStep])
+		step = nextStep
+	}
+	return dst
+}
