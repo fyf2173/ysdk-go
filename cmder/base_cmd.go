@@ -3,13 +3,13 @@ package cmder
 import "github.com/spf13/cobra"
 
 type BaseCmd struct {
-	cmd *cobra.Command
+	Cmd *cobra.Command
 }
 
 func (bc *BaseCmd) GetCommand() *cobra.Command {
-	return bc.cmd
+	return bc.Cmd
 }
 
 func NewBaseCmd(cmd *cobra.Command) *BaseCmd {
-	return &BaseCmd{cmd: cmd}
+	return &BaseCmd{Cmd: cmd}
 }
