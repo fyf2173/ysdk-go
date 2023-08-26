@@ -8,19 +8,6 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-var gormConn *gorm.DB
-
-// OrmInstance 获取链接实例
-func OrmInstance() *gorm.DB {
-	return gormConn
-}
-
-// InitGorm 初始化gorm
-func InitGorm(env string, cfg DbConfig) (err error) {
-	gormConn, err = gorm.Open(newMysqlDial(cfg), newMysqlConf(env, cfg))
-	return err
-}
-
 // NewGorm 实例话一个gorm连接
 func NewGorm(env string, cfg DbConfig) (*gorm.DB, error) {
 	return gorm.Open(newMysqlDial(cfg), newMysqlConf(env, cfg))

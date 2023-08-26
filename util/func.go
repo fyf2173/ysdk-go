@@ -90,9 +90,14 @@ func TimeFixDate(t time.Time) time.Time {
 }
 
 func ViperGetNode(key string, node interface{}) error {
-	return viper.UnmarshalKey(key, node, func(m *mapstructure.DecoderConfig) {
-		m.TagName = "yaml"
-	})
+	return viper.UnmarshalKey(key, node, func(m *mapstructure.DecoderConfig) { m.TagName = "yaml" })
+}
+
+func ViperMustGetNode[T any](key string, node T) T {
+	if err := viper.UnmarshalKey(key, &node, func(m *mapstructure.DecoderConfig) { m.TagName = "yaml" }); err != nil {
+		panic(err)
+	}
+	return node
 }
 
 // Validate 校验参数
@@ -115,7 +120,7 @@ func Validate(params interface{}) error {
 	return nil
 }
 
-// n is the len of returned rand string
+// GetRandString n is the len of returned rand string
 func GetRandString(n int) string {
 	var rands = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	b := make([]byte, n)
