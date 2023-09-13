@@ -1,35 +1,17 @@
 package xhttp
 
 import (
-	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"encoding/xml"
-	"io/ioutil"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
-	"time"
 )
 
 type DefaultClient struct {
 	http.Client
-	l *log.Logger
-}
-
-type rqlog struct {
-	Ts     int64       `json:"t"`
-	Tm     time.Time   `json:"ft"`
-	Dur    int         `json:"dur"`
-	Link   string      `json:"link"`
-	Header interface{} `json:"header"`
-	Body   interface{} `json:"body"`
-	Resp   interface{} `json:"resp"`
-}
-
-func (rl *rqlog) String() string {
-	b, _ := json.Marshal(rl)
-	return string(b)
 }
 
 // NewClientWithCert 创建SSL链接客户端
@@ -61,101 +43,49 @@ func NewClientWithCert(pemCert, pemKey []byte) *http.Client {
 }
 
 // NewClientDefault 创建普通客户端
-func NewClientDefault(logger *log.Logger) *DefaultClient {
-	return &DefaultClient{
-		Client: *http.DefaultClient,
-		l: logger,
-	}
+func NewClientDefault() *DefaultClient {
+	return &DefaultClient{Client: *http.DefaultClient}
 }
 
-func (dc *DefaultClient) JsonRequest(link, method string, header map[string]string, data interface{}, i interface{}) error {
-	var (
-		rq rqlog
-		ts = time.Now().Nanosecond()
-		te = time.Now().Nanosecond()
-	)
-	defer func() {
-		rq.Header = header
-		rq.Body = data
-		rq.Resp = i
-		rq.Link = link
-		rq.Ts = time.Now().Unix()
-		rq.Tm = time.Now()
-		rq.Dur = (te - ts) / 1000000
-		if dc.l == nil {
-			return
-		}
-		dc.l.Println(rq.String())
-		return
-	}()
-	b, err := json.Marshal(data)
+func (dc *DefaultClient) Request(method, link string, params interface{}, resp interface{}, ops ...Option) error {
+	log.Printf(">>>> 开始请求【link=%s】，参数【%+v】", link, func() string {
+		b, _ := json.Marshal(params)
+		return string(b)
+	}())
+	req, err := http.NewRequest(method, link, nil)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(method, link, bytes.NewBuffer(b))
+	if params != nil {
+		ops = append(ops, JsonBody(params))
+	}
+	for _, op := range ops {
+		op(req)
+	}
+	response, err := dc.Do(req)
 	if err != nil {
-		te = time.Now().Nanosecond()
+		log.Printf("请求【link=%s】出错，err=%s", link, err)
 		return err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	for k, v := range header {
-		req.Header.Set(k, v)
-	}
-	resp, err := dc.Do(req)
-	if err != nil {
-		te = time.Now().Nanosecond()
-		return err
-	}
-	b, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		te = time.Now().Nanosecond()
-		return err
-	}
-	err = json.Unmarshal(b, i)
-	te = time.Now().Nanosecond()
-	return err
-}
 
-func (dc *DefaultClient) XmlRequest(link, method string, header map[string]string, data interface{}, i interface{}) error {
-	var (
-		rq rqlog
-		ts = time.Now().Nanosecond()
-		te = time.Now().Nanosecond()
-	)
-	defer func() {
-		rq.Header = header
-		rq.Body = data
-		rq.Resp = i
-		rq.Link = link
-		rq.Ts = time.Now().Unix()
-		rq.Tm = time.Now()
-		rq.Dur = (te - ts) / 1000000
-		dc.l.Println(rq.String())
-	}()
-	b, err := xml.Marshal(data)
-	if err != nil {
+	if response.StatusCode != 200 {
+		err := fmt.Errorf("接口【link=%+v】请求错误[status_code=%d]", link, response.StatusCode)
+		log.Printf("%s", err)
 		return err
 	}
-	req, err := http.NewRequest(method, link, bytes.NewBuffer(b))
+	defer response.Body.Close()
+	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
-		te = time.Now().Nanosecond()
+		log.Printf("读取数据出错，err=%+v", err)
 		return err
 	}
-	req.Header.Set("Content-Type", "application/xml")
-	for k, v := range header {
-		req.Header.Set(k, v)
+	if resp == nil {
+		return nil
 	}
-	resp, err := dc.Do(req)
-	if err != nil {
-		te = time.Now().Nanosecond()
-		return err
+	if response.ContentLength <= DefaultRespSize && response.ContentLength > 0 {
+		log.Printf("获取响应数据，responseBody=%+v", string(bodyBytes))
 	}
-	b, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		te = time.Now().Nanosecond()
-		return err
-	}
-	err = xml.Unmarshal(b, i)
-	te = time.Now().Nanosecond()
-	return err
+	log.Printf(">>>> 结束请求【%s】，响应数据【ContentLength=%d】 <<<<", link, response.ContentLength)
+
+	return json.Unmarshal(bodyBytes, &resp)
 }

@@ -132,13 +132,10 @@ func Request(method, link string, params interface{}, resp interface{}, ops ...O
 	if resp == nil {
 		return nil
 	}
-	if err := json.Unmarshal(bodyBytes, &resp); err != nil {
-		log.Printf("解析数据出错，err=%+v", err)
-		return err
-	}
 	if response.ContentLength <= DefaultRespSize && response.ContentLength > 0 {
-		log.Printf("获取响应数据，body=%+v", string(bodyBytes))
+		log.Printf("获取响应数据，responseBody=%+v", string(bodyBytes))
 	}
 	log.Printf(">>>> 结束请求【%s】，响应数据【ContentLength=%d】 <<<<", link, response.ContentLength)
-	return nil
+
+	return json.Unmarshal(bodyBytes, &resp)
 }
