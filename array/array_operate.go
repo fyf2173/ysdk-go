@@ -1,6 +1,7 @@
 package array
 
 import (
+	"fmt"
 	"reflect"
 )
 
@@ -55,6 +56,21 @@ func ArrayPluckByT[T any](src []T, length int) (dst [][]T) {
 		}
 		dst = append(dst, src[step:nextStep])
 		step = nextStep
+	}
+	return dst
+}
+
+func ArrayUniq[T any](src []T) (dst []T) {
+	var tmpMap = make(map[string]T)
+	for _, v := range src {
+		if _, ok := tmpMap[fmt.Sprintf("%v", v)]; ok {
+			continue
+		}
+		tmpMap[fmt.Sprintf("%v", v)] = v
+	}
+
+	for _, v := range tmpMap {
+		dst = append(dst, v)
 	}
 	return dst
 }
