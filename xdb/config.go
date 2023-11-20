@@ -1,24 +1,29 @@
 package xdb
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm/logger"
+)
 
 type DbConfig struct {
-	Driver    string    `json:"driver" yaml:"driver"`
-	MasterDSN string    `json:"master_dsn" yaml:"master_dsn"`
-	Slaves    SlavesCfg `json:"slaves" yaml:"slaves"`
-	Pool      PoolCfg   `json:"pool" yaml:"pool"`
-	Log       bool      `json:"log" yaml:"log"`
-	Prefix    string    `json:"prefix" yaml:"prefix"`
+	Driver    string           `json:"driver" yaml:"driver"`
+	MasterDSN string           `json:"master_dsn" yaml:"master_dsn"`
+	Slaves    SlavesCfg        `json:"slaves" yaml:"slaves"`
+	Pool      PoolCfg          `json:"pool" yaml:"pool"`
+	Log       bool             `json:"log" yaml:"log"`
+	Prefix    string           `json:"prefix" yaml:"prefix"`
+	Logger    logger.Interface `json:"-"`
 }
 
-//PoolCfg 连接池配置
+// PoolCfg 连接池配置
 type PoolCfg struct {
 	MaxIdleConns    int           `json:"max_idle_conns" yaml:"max_idle_conns"`
 	MaxOpenConns    int           `json:"max_open_conns" yaml:"max_open_conns"`
 	ConnMaxLifetime time.Duration `json:"conn_max_lifetime" yaml:"conn_max_lifetime" usage:"单位：秒"`
 }
 
-//SlavesCfg 从库配置
+// SlavesCfg 从库配置
 type SlavesCfg struct {
 	DSNList  []string `json:"dsn_list" yaml:"dsn_list"`
 	Strategy string   `json:"strategy" yaml:"strategy"`

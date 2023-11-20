@@ -22,9 +22,10 @@ func (cpr *CommPageReq) SetOffset() {
 }
 
 type CommResp struct {
-	Code int         `json:"code"`
-	Msg  string      `json:"msg"`
-	Data interface{} `json:"data,omitempty"`
+	Code      int         `json:"code"`
+	Msg       string      `json:"msg"`
+	RequestId string      `json:"request_id"`
+	Data      interface{} `json:"data,omitempty"`
 }
 
 type PageData struct {

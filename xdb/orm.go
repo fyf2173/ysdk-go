@@ -33,10 +33,9 @@ func newMysqlConf(env string, cfg DbConfig) *gorm.Config {
 		},
 		SkipDefaultTransaction: true,
 	}
-	logLevel := logger.Info
 	if env == "prod" || cfg.Log == false {
-		logLevel = logger.Silent
+		logger.Default.LogMode(logger.Silent)
 	}
-	gcf.Logger = logger.Default.LogMode(logLevel)
+	gcf.Logger = cfg.Logger
 	return gcf
 }
