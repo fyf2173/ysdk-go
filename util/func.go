@@ -235,3 +235,12 @@ func CallFuncs(fc interface{}, params ...interface{}) (result interface{}, err e
 	result = nil
 	return
 }
+
+// Stringf 字符格式拼接
+func Stringf(args ...string) string {
+	var buf strings.Builder
+	for _, s := range args {
+		buf.WriteString(s)
+	}
+	return buf.String()
+}

@@ -2,12 +2,18 @@ package xhttp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"strings"
+
+	"github.com/fyf2173/ysdk-go/xctx"
+	"github.com/fyf2173/ysdk-go/xlog"
 )
 
 const DefaultRespSize = 500 * 1024 // 单位Kb
@@ -32,6 +38,12 @@ var (
 func SetContentType(contentType string) Option {
 	return func(request *http.Request) {
 		request.Header.Set("Content-Type", contentType)
+	}
+}
+
+func SetTraceId(ctx context.Context) Option {
+	return func(req *http.Request) {
+		req.Header.Set("Trace-ID", xctx.CtxId(ctx))
 	}
 }
 
@@ -91,21 +103,59 @@ func SetRequestBody(body io.Reader) Option {
 
 func JsonBody(params interface{}) Option {
 	return func(req *http.Request) {
-		SetRequestHeader("Content-Type", "application/json")(req)
+		SetContentTypeJson(req)
 		b, _ := json.Marshal(params)
 		SetRequestBody(bytes.NewBuffer(b))(req)
 	}
 }
 
-func Request(method, link string, params interface{}, resp interface{}, ops ...Option) error {
-	log.Printf(">>>> 开始请求【link=%s】，参数【%+v】", link, func() string {
-		b, _ := json.Marshal(params)
-		return string(b)
-	}())
+func FromdataBody(params map[string]string, files ...*os.File) Option {
+	return func(req *http.Request) {
+		SetContentTypeFormData(req)
+		var rb = &bytes.Buffer{}
+		w := multipart.NewWriter(rb)
+		for k, v := range params {
+			w.WriteField(k, v)
+		}
+		for _, v := range files {
+			fw, err := w.CreateFormFile("files", v.Name()) // 自定义文件名，发送文件流
+			if err != nil {
+				panic(err)
+			}
+			if _, err := io.Copy(fw, v); err != nil {
+				panic(err)
+			}
+			v.Close()
+		}
+		w.Close()
+		SetRequestBody(rb)
+	}
+}
+
+func FormBody(params map[string]string) Option {
+	return func(req *http.Request) {
+		SetContentTypeForm(req)
+		var rb = &bytes.Buffer{}
+		w := multipart.NewWriter(rb)
+		for k, v := range params {
+			w.WriteField(k, v)
+		}
+		w.Close()
+		SetRequestBody(rb)
+	}
+}
+
+type IResponse interface {
+	Unmarshal(src []byte, dst interface{}) error
+}
+
+func Request(ctx context.Context, method, link string, params interface{}, resp IResponse, ops ...Option) error {
+	xlog.Info(ctx, fmt.Sprintf(">>> 开始请求【[%s]link=%s】", method, link), slog.Any("params", params))
 	req, err := http.NewRequest(method, link, nil)
 	if err != nil {
 		return err
 	}
+	ops = append(ops, SetTraceId(ctx))
 	if params != nil {
 		ops = append(ops, JsonBody(params))
 	}
@@ -114,28 +164,26 @@ func Request(method, link string, params interface{}, resp interface{}, ops ...O
 	}
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Printf("请求【link=%s】出错，err=%s", link, err)
+		xlog.Error(ctx, err, slog.String("method", method), slog.String("link", link))
 		return err
 	}
 
 	if response.StatusCode != 200 {
-		err := fmt.Errorf("接口【link=%+v】请求错误[status_code=%d]", link, response.StatusCode)
-		log.Printf("%s", err)
-		return err
+		xlog.Info(ctx, fmt.Sprintf("[%s]%s:%d", method, link, response.StatusCode))
+		return fmt.Errorf("errorstatus:%d", response.StatusCode)
 	}
 	defer response.Body.Close()
 	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
-		log.Printf("读取数据出错，err=%+v", err)
+		xlog.Error(ctx, err)
 		return err
 	}
 	if resp == nil {
 		return nil
 	}
 	if response.ContentLength <= DefaultRespSize && response.ContentLength > 0 {
-		log.Printf("获取响应数据，responseBody=%+v", string(bodyBytes))
+		xlog.Info(ctx, "trace response", slog.String("response", string(bodyBytes)))
 	}
-	log.Printf(">>>> 结束请求【%s】，响应数据【ContentLength=%d】 <<<<", link, response.ContentLength)
-
-	return json.Unmarshal(bodyBytes, &resp)
+	xlog.Info(ctx, fmt.Sprintf(">>> 结束请求[%s]%s", method, link), slog.Int64("content_length", response.ContentLength))
+	return resp.Unmarshal(bodyBytes, resp)
 }
