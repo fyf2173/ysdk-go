@@ -9,11 +9,16 @@ import (
 	"log/slog"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
 	"github.com/fyf2173/ysdk-go/xctx"
 	"github.com/fyf2173/ysdk-go/xlog"
+)
+
+const (
+	HeaderTraceId = "Trace-Id"
 )
 
 const DefaultRespSize = 500 * 1024 // 单位Kb
@@ -38,12 +43,13 @@ var (
 func SetContentType(contentType string) Option {
 	return func(request *http.Request) {
 		request.Header.Set("Content-Type", contentType)
+		fmt.Println("-------------------", contentType)
 	}
 }
 
 func SetTraceId(ctx context.Context) Option {
 	return func(req *http.Request) {
-		req.Header.Set("Trace-ID", xctx.CtxId(ctx))
+		req.Header.Set(HeaderTraceId, xctx.CtxId(ctx))
 	}
 }
 
@@ -109,39 +115,40 @@ func JsonBody(params interface{}) Option {
 	}
 }
 
+// FromdataBody 文件表单提交(multipart/form-data)
 func FromdataBody(params map[string]string, files ...*os.File) Option {
 	return func(req *http.Request) {
-		SetContentTypeFormData(req)
-		var rb = &bytes.Buffer{}
+		var rb = &bytes.Buffer{} // 创建一个buffer
 		w := multipart.NewWriter(rb)
-		for k, v := range params {
-			w.WriteField(k, v)
-		}
-		for _, v := range files {
-			fw, err := w.CreateFormFile("files", v.Name()) // 自定义文件名，发送文件流
+		for _, fi := range files {
+			fw, err := w.CreateFormFile("files", fi.Name()) // 自定义文件名，发送文件流
 			if err != nil {
 				panic(err)
 			}
-			if _, err := io.Copy(fw, v); err != nil {
+			// 把文件内容，复制到fw中
+			if _, err := io.Copy(fw, fi); err != nil {
 				panic(err)
 			}
-			v.Close()
+			fi.Close()
 		}
-		w.Close()
-		SetRequestBody(rb)
-	}
-}
-
-func FormBody(params map[string]string) Option {
-	return func(req *http.Request) {
-		SetContentTypeForm(req)
-		var rb = &bytes.Buffer{}
-		w := multipart.NewWriter(rb)
 		for k, v := range params {
 			w.WriteField(k, v)
 		}
-		w.Close()
-		SetRequestBody(rb)
+		w.Close() // 很重要，一定要关闭写入，不然服务端会报EOF错误，而且度不到数据
+		SetContentType(w.FormDataContentType())(req)
+		SetRequestBody(rb)(req)
+	}
+}
+
+// FormBody 普通表单提交(application/x-www-form-urlencoded)
+func FormBody(params map[string]string) Option {
+	return func(req *http.Request) {
+		var form url.Values
+		for k, v := range params {
+			form.Set(k, v)
+		}
+		SetContentTypeForm(req)
+		SetRequestBody(bytes.NewBufferString(form.Encode()))(req)
 	}
 }
 
@@ -178,12 +185,12 @@ func Request(ctx context.Context, method, link string, params interface{}, resp 
 		xlog.Error(ctx, err)
 		return err
 	}
-	if resp == nil {
-		return nil
-	}
 	if response.ContentLength <= DefaultRespSize && response.ContentLength > 0 {
 		xlog.Info(ctx, "trace response", slog.String("response", string(bodyBytes)))
 	}
 	xlog.Info(ctx, fmt.Sprintf(">>> 结束请求[%s]%s", method, link), slog.Int64("content_length", response.ContentLength))
+	if resp == nil {
+		return nil
+	}
 	return resp.Unmarshal(bodyBytes, resp)
 }

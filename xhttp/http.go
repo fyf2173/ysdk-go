@@ -76,12 +76,12 @@ func (dc *DefaultClient) Request(ctx context.Context, method, link string, param
 		xlog.Error(ctx, err)
 		return err
 	}
-	if resp == nil {
-		return nil
-	}
 	if response.ContentLength <= DefaultRespSize && response.ContentLength > 0 {
 		xlog.Info(ctx, "trace response", slog.String("response", string(bodyBytes)))
 	}
 	xlog.Info(ctx, fmt.Sprintf(">>> 结束请求[%s]%s", method, link), slog.Int64("content_length", response.ContentLength))
+	if resp == nil {
+		return nil
+	}
 	return resp.Unmarshal(bodyBytes, resp)
 }
