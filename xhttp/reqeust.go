@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"log/slog"
@@ -43,7 +44,6 @@ var (
 func SetContentType(contentType string) Option {
 	return func(request *http.Request) {
 		request.Header.Set("Content-Type", contentType)
-		fmt.Println("-------------------", contentType)
 	}
 }
 
@@ -154,6 +154,18 @@ func FormBody(params map[string]string) Option {
 
 type IResponse interface {
 	Unmarshal(src []byte, dst interface{}) error
+}
+
+type JsonResponse struct{}
+
+func (jr *JsonResponse) Unmarshal(src []byte, dst interface{}) error {
+	return json.Unmarshal(src, &dst)
+}
+
+type XmlResponse struct{}
+
+func (xr *XmlResponse) Unmarshal(src []byte, dst interface{}) error {
+	return xml.Unmarshal(src, &dst)
 }
 
 func Request(ctx context.Context, method, link string, params interface{}, resp IResponse, ops ...Option) error {
