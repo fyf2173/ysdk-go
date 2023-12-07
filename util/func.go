@@ -3,7 +3,7 @@ package util
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net"
 	"reflect"
@@ -16,10 +16,6 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
 )
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 // TrimFloatZeroSuffix 格式化浮点数，去除小数点末尾的0或.
 func TrimFloatZeroSuffix(floatStr string) string {
@@ -130,7 +126,7 @@ func GetRandString(n int) string {
 	return string(b)
 }
 
-// GetRandBetween 生成区间随机数
+// GetRandBetween 生成区间随机数，最小是min，最大是max-1
 func GetRandBetween(min, max int64) int64 {
 	if min > max || min == 0 || max == 0 {
 		return max
@@ -141,7 +137,7 @@ func GetRandBetween(min, max int64) int64 {
 // GbkToUtf8 transform GBK bytes to UTF-8 bytes
 func GbkToUtf8(str []byte) (b []byte, err error) {
 	r := transform.NewReader(bytes.NewReader(str), simplifiedchinese.GB18030.NewDecoder())
-	b, err = ioutil.ReadAll(r)
+	b, err = io.ReadAll(r)
 	if err != nil {
 		return
 	}
@@ -151,7 +147,7 @@ func GbkToUtf8(str []byte) (b []byte, err error) {
 // Utf8ToGbk transform UTF-8 bytes to GBK bytes
 func Utf8ToGbk(str []byte) (b []byte, err error) {
 	r := transform.NewReader(bytes.NewReader(str), simplifiedchinese.GB18030.NewEncoder())
-	b, err = ioutil.ReadAll(r)
+	b, err = io.ReadAll(r)
 	if err != nil {
 		return
 	}
@@ -243,4 +239,24 @@ func Stringf(args ...string) string {
 		buf.WriteString(s)
 	}
 	return buf.String()
+}
+
+// GetProbability 按百分比计算概率，probSeeds为概率种子数组，例：[]int{1, 1, 1, 1, 0, 0, 0, 0, 0, 0}，取概率值为40%
+func GetProbability(probSeeds [10]int) bool {
+	if index := GetRandBetween(1, int64(len(probSeeds))+1); probSeeds[index-1] <= 0 {
+		return false
+	}
+	return true
+}
+
+// NewProbSeeds 初始化概率种子，probability为[0,1]之间的概率
+func NewProbSeeds(probability float64) [10]int {
+	var rateArr [10]int
+	for i := 0; i < int(probability*10); i++ {
+		if i >= len(rateArr) {
+			break
+		}
+		rateArr[i] = 1
+	}
+	return rateArr
 }

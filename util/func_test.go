@@ -1,6 +1,8 @@
 package util
 
 import (
+	"fmt"
+	"math/rand"
 	"runtime"
 	"testing"
 )
@@ -13,4 +15,14 @@ func TestGetRandBetween(t *testing.T) {
 		t.Log(GetRandBetween(1, 7))
 	}
 	t.Log(runtime.Version())
+}
+
+func TestMathRand(t *testing.T) {
+	var randResult = make(map[int64]int)
+	for i := 0; i <= 105; i++ {
+		r := rand.Int63n(100)
+		fmt.Println("-->", r)
+		randResult[r]++
+	}
+	t.Log(randResult)
 }
