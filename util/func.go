@@ -126,11 +126,12 @@ func GetRandString(n int) string {
 	return string(b)
 }
 
-// GetRandBetween 生成区间随机数，最小是min，最大是max-1
+// GetRandBetween 生成区间随机数，最小是min，最大是max
 func GetRandBetween(min, max int64) int64 {
 	if min > max || min == 0 || max == 0 {
 		return max
 	}
+	max = max + 1
 	return rand.Int63n(max-min) + min
 }
 
@@ -243,7 +244,7 @@ func Stringf(args ...string) string {
 
 // GetProbability 按百分比计算概率，probSeeds为概率种子数组，例：[]int{1, 1, 1, 1, 0, 0, 0, 0, 0, 0}，取概率值为40%
 func GetProbability(probSeeds [10]int) bool {
-	if index := GetRandBetween(1, int64(len(probSeeds))+1); probSeeds[index-1] <= 0 {
+	if index := GetRandBetween(1, int64(len(probSeeds))); probSeeds[index-1] <= 0 {
 		return false
 	}
 	return true
