@@ -261,3 +261,85 @@ func NewProbSeeds(probability float64) [10]int {
 	}
 	return rateArr
 }
+
+// SliceCompareGroup compare two slices and return sames, ldiff, rdiff. sames is the same elements between ref and
+// other, ldiff is the diffrence of ref to sames, rdiff is the diffrence of other to sames
+func SliceCompareGroup[T comparable](refs, others []T) (sames, ldiff, rdiff []T) {
+	for _, rv := range refs {
+		if SliceFindOk(rv, others) {
+			sames = append(sames, rv)
+		}
+	}
+	for _, rv := range refs {
+		if !SliceFindOk(rv, sames) {
+			ldiff = append(ldiff, rv)
+		}
+	}
+	for _, ov := range others {
+		if !SliceFindOk(ov, sames) {
+			rdiff = append(rdiff, ov)
+		}
+	}
+	return
+}
+
+// SliceFindOk find val from cmps, if found return true, or return false
+func SliceFindOk[T comparable](val T, cmps []T) bool {
+	for _, v := range cmps {
+		if val == v {
+			return true
+		}
+	}
+	return false
+}
+
+// SliceField take val slice from refs slice
+func SliceField[T any, R any](refs []T, fn func(val T) R) []R {
+	var result []R
+	for _, v := range refs {
+		result = append(result, fn(v))
+	}
+	return result
+}
+
+// SliceFieldFiltered take val slice from refs slice by filtered
+func SliceFieldFiltered[T any, R any](refs []T, fn func(val T) (R, error)) []R {
+	var result []R
+	for _, v := range refs {
+		tmp, err := fn(v)
+		if err != nil {
+			continue
+		}
+		result = append(result, tmp)
+	}
+	return result
+}
+
+// SliceFieldMap take field map from refs slice
+func SliceFieldMap[T any, R comparable](refs []T, fn func(val T) R) map[R]T {
+	var result = make(map[R]T)
+	for _, v := range refs {
+		result[fn(v)] = v
+	}
+	return result
+}
+
+// SliceFieldFilteredMap take field map from refs slice by filtered
+func SliceFieldFilteredMap[T any, R comparable](refs []T, fn func(val T) (R, error)) map[R]T {
+	var result = make(map[R]T)
+	for _, v := range refs {
+		tmp, err := fn(v)
+		if err != nil {
+			continue
+		}
+		result[tmp] = v
+	}
+	return result
+}
+
+func MaxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
