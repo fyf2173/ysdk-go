@@ -293,6 +293,16 @@ func SliceFindOk[T comparable](val T, cmps []T) bool {
 	return false
 }
 
+// SliceFindFilter find val from cmps by filter, if found return true, or return false
+func SliceFindFilter[T comparable](val T, cmps []T, fn func(val, cmpsval T) bool) bool {
+	for _, v := range cmps {
+		if fn(val, v) == true {
+			return true
+		}
+	}
+	return false
+}
+
 // SliceField take val slice from refs slice
 func SliceField[T any, R any](refs []T, fn func(val T) R) []R {
 	var result []R
@@ -324,6 +334,16 @@ func SliceFieldMap[T any, R comparable](refs []T, fn func(val T) R) map[R]T {
 	return result
 }
 
+// SliceFieldMapWithKey take field map with customed key from refs slice
+func SliceFieldMapWithKey[T any, K, R comparable](refs []T, fn func(val T) (K, R)) map[K]R {
+	var result = make(map[K]R)
+	for _, v := range refs {
+		k, r := fn(v)
+		result[k] = r
+	}
+	return result
+}
+
 // SliceFieldFilteredMap take field map from refs slice by filtered
 func SliceFieldFilteredMap[T any, R comparable](refs []T, fn func(val T) (R, error)) map[R]T {
 	var result = make(map[R]T)
@@ -333,6 +353,19 @@ func SliceFieldFilteredMap[T any, R comparable](refs []T, fn func(val T) (R, err
 			continue
 		}
 		result[tmp] = v
+	}
+	return result
+}
+
+// SliceFieldFilteredMapWithKey take field map with customed key from refs slice by filtered
+func SliceFieldFilteredMapWithKey[T any, K, R comparable](refs []T, fn func(val T) (K, R, error)) map[K]R {
+	var result = make(map[K]R)
+	for _, v := range refs {
+		key, tmp, err := fn(v)
+		if err != nil {
+			continue
+		}
+		result[key] = tmp
 	}
 	return result
 }
