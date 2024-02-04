@@ -11,31 +11,27 @@ package handler
 import (
 	"fmt"
 	"image"
-	"image/png"
-	"os"
 
 	"github.com/fyf2173/ysdk-go/xposter/core"
 )
 
 // BackgroundHandler 背景图
-type BackgroundHandler struct {
+type BackgroundRemoteHandler struct {
 	// 合成复用Next
 	Next
-	X    int
-	Y    int
-	Path string
+	X      int
+	Y      int
+	Width  int
+	Height int
+	URL    string
 }
 
 // Do 地址逻辑
-func (h *BackgroundHandler) Do(c *Context) {
+func (h *BackgroundRemoteHandler) Do(c *Context) {
 	//获取背景 必须是PNG图
-	bgFile, err := os.Open(h.Path)
+	bgImage, err := core.GetResourceReader(h.URL, h.Width, h.Height)
 	if err != nil {
-		panic(fmt.Errorf("os.Open err：%s", err))
-	}
-	bgImage, err := png.Decode(bgFile)
-	if err != nil {
-		panic(fmt.Errorf("png.Decode err：%v", err))
+		panic(fmt.Errorf("core.GetResourceReader err：%v", err))
 	}
 	bgPoint := image.Point{
 		X: h.X,

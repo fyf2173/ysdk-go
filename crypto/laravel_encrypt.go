@@ -14,10 +14,16 @@ import (
 	"github.com/techoner/gophp/serialize"
 )
 
-var appKey string
+type LaravelToken struct {
+	appkey string
+}
 
-//加密
-func Encrypt(value string) (string, error) {
+func NewLaravelToken(appkey string) *LaravelToken {
+	return &LaravelToken{appkey: appkey}
+}
+
+// 加密
+func (lt *LaravelToken) Encrypt(value string) (string, error) {
 	iv := make([]byte, 16)
 	_, err := rand.Read(iv)
 	if err != nil {
@@ -30,7 +36,7 @@ func Encrypt(value string) (string, error) {
 		return "", err
 	}
 
-	key := getKey()
+	key := lt.getKey()
 
 	//加密value
 	res, err := openssl.AesCBCEncrypt(message, []byte(key), iv, openssl.PKCS7_PADDING)
@@ -63,8 +69,8 @@ func Encrypt(value string) (string, error) {
 	return ticketR, nil
 }
 
-//解密
-func Decrypt(value string) (string, error) {
+// 解密
+func (lt *LaravelToken) Decrypt(value string) (string, error) {
 	//base64解密
 	token, err := base64.StdEncoding.DecodeString(value)
 	if err != nil {
@@ -85,7 +91,7 @@ func Decrypt(value string) (string, error) {
 		return "", errors.New("value is not full")
 	}
 
-	key := getKey()
+	key := lt.getKey()
 
 	//mac检查，防止数据篡改
 	data := tokenJsonIv + tokenJsonValue
@@ -117,24 +123,9 @@ func Decrypt(value string) (string, error) {
 	return res.(string), nil
 }
 
-//比较预期的hash和实际的hash
-func checkMAC(message, msgMac, secret string) bool {
-	expectedMAC := computeHmacSha256(message, secret)
-	return hmac.Equal([]byte(expectedMAC), []byte(msgMac))
-}
-
-//计算mac值
-func computeHmacSha256(message string, secret string) string {
-	key := []byte(secret)
-	h := hmac.New(sha256.New, key)
-	h.Write([]byte(message))
-	sha := hex.EncodeToString(h.Sum(nil))
-	return sha
-}
-
-//处理密钥
-func getKey() string {
-	appKey := appKey
+// 处理密钥
+func (lt *LaravelToken) getKey() string {
+	appKey := lt.appkey
 	if strings.HasPrefix(appKey, "base64:") {
 		split := appKey[7:]
 		if key, err := base64.StdEncoding.DecodeString(split); err == nil {
@@ -145,9 +136,17 @@ func getKey() string {
 	return appKey
 }
 
-// 初始化 lumen appKey
-// key 支持两种方式
-// 普通string 和 base64字符串 base64: 开头
-func InitLumenEncrypt(key string) {
-	appKey = key
+// 比较预期的hash和实际的hash
+func checkMAC(message, msgMac, secret string) bool {
+	expectedMAC := computeHmacSha256(message, secret)
+	return hmac.Equal([]byte(expectedMAC), []byte(msgMac))
+}
+
+// 计算mac值
+func computeHmacSha256(message string, secret string) string {
+	key := []byte(secret)
+	h := hmac.New(sha256.New, key)
+	h.Write([]byte(message))
+	sha := hex.EncodeToString(h.Sum(nil))
+	return sha
 }
