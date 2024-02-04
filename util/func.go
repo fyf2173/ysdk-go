@@ -135,6 +135,91 @@ func GetRandBetween(min, max int64) int64 {
 	return rand.Int63n(max-min) + min
 }
 
+const (
+	GBK     string = "GBK"
+	UTF8    string = "UTF8"
+	UNKNOWN string = "UNKNOWN"
+)
+
+// 需要说明的是，isGBK()是通过双字节是否落在gbk的编码范围内实现的，
+// 而utf-8编码格式的每个字节都是落在gbk的编码范围内，
+// 所以只有先调用isUtf8()先判断不是utf-8编码，再调用isGBK()才有意义
+func GetStrCoding(data []byte) string {
+	if isUTF8(data) == true {
+		return UTF8
+	} else if isGBK(data) == true {
+		return GBK
+	} else {
+		return UNKNOWN
+	}
+}
+
+// isGBK check data encode is gbk
+func isGBK(data []byte) bool {
+	bn := len(data)
+	for i := 0; i <= bn-1; i++ {
+		single := data[i]
+		if single <= 0x7f { // 编码0~127,只有一个字节的编码，兼容ASCII码
+			continue
+		}
+		// 大于127的使用双字节编码，落在gbk编码范围内的字符
+		i += 1
+		if single >= 0x81 && single <= 0xFE {
+			if i >= bn {
+				return false
+			}
+			double := data[i]
+			if double >= 0x40 && double <= 0xFE && double != 0x7F {
+				continue
+			}
+		}
+	}
+	return true
+}
+
+func preNUm(data byte) int {
+	var mask byte = 0x80
+	var num int = 0
+	//8bit中首个0bit前有多少个1bits
+	for i := 0; i < 8; i++ {
+		if (data & mask) != mask {
+			break
+		}
+		num++
+		mask = mask >> 1
+	}
+	return num
+}
+
+func isUTF8(data []byte) bool {
+	for i := 0; i <= len(data)-1; i++ {
+		// 0XXX_XXXX
+		if (data[i] & 0x80) == 0x00 {
+			continue
+		}
+
+		// preNUm() 返回首个字节的8个bits中首个0bit前面1bit的个数，该数量也是该字符所使用的字节数
+		num := preNUm(data[i])
+		if num <= 2 {
+			return false
+		}
+
+		// 110X_XXXX 10XX_XXXX
+		// 1110_XXXX 10XX_XXXX 10XX_XXXX
+		// 1111_0XXX 10XX_XXXX 10XX_XXXX 10XX_XXXX
+		// 1111_10XX 10XX_XXXX 10XX_XXXX 10XX_XXXX 10XX_XXXX
+		// 1111_110X 10XX_XXXX 10XX_XXXX 10XX_XXXX 10XX_XXXX 10XX_XXXX
+		for j := 0; j < num-1; j++ {
+			//判断后面的 num - 1 个字节是不是都是10开头
+			if (data[i+1] & 0xc0) != 0x80 {
+				return false
+			}
+			i += 1
+		}
+	}
+	return true
+}
+
 // GbkToUtf8 transform GBK bytes to UTF-8 bytes
 func GbkToUtf8(str []byte) (b []byte, err error) {
 	r := transform.NewReader(bytes.NewReader(str), simplifiedchinese.GB18030.NewDecoder())
@@ -173,6 +258,19 @@ func StrToGBK(str *string) error {
 	}
 	*str = string(b)
 	return nil
+}
+
+// StrTransform transform GBK string to UTF-8 string，if str is UTF-8 string，return itself，then transform to UTF-8 string and returned，
+// otherwise return origin str
+func StrTransform(str string) string {
+	if encode := GetStrCoding([]byte(str)); encode == UTF8 {
+		return str
+	}
+	newByte, err := GbkToUtf8([]byte(str))
+	if err != nil {
+		return str
+	}
+	return string(newByte)
 }
 
 // Substr returns the substr from start to length, if length smaller than 0, Substr returns the substr from start to end
