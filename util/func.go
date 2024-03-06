@@ -383,16 +383,13 @@ func SliceCompareGroup[T comparable](refs, others []T) (sames, ldiff, rdiff []T)
 
 // SliceFindOk find val from cmps, if found return true, or return false
 func SliceFindOk[T comparable](val T, cmps []T) bool {
-	for _, v := range cmps {
-		if val == v {
-			return true
-		}
-	}
-	return false
+	return SliceFindFilterOk(val, cmps, func(val, cmpsval T) bool {
+		return val == cmpsval
+	})
 }
 
 // SliceFindFilter find val from cmps by filter, if found return true, or return false
-func SliceFindFilter[T comparable](val T, cmps []T, fn func(val, cmpsval T) bool) bool {
+func SliceFindFilterOk[T comparable](val T, cmps []T, fn func(val, cmpsval T) bool) bool {
 	for _, v := range cmps {
 		if fn(val, v) == true {
 			return true
@@ -401,17 +398,8 @@ func SliceFindFilter[T comparable](val T, cmps []T, fn func(val, cmpsval T) bool
 	return false
 }
 
-// SliceField take val slice from refs slice
-func SliceField[T any, R any](refs []T, fn func(val T) R) []R {
-	var result []R
-	for _, v := range refs {
-		result = append(result, fn(v))
-	}
-	return result
-}
-
 // SliceFieldFiltered take val slice from refs slice by filtered
-func SliceFieldFiltered[T any, R any](refs []T, fn func(val T) (R, error)) []R {
+func SliceFieldFilteredSlice[T any, R any](refs []T, fn func(val T) (R, error)) []R {
 	var result []R
 	for _, v := range refs {
 		tmp, err := fn(v)
@@ -419,38 +407,6 @@ func SliceFieldFiltered[T any, R any](refs []T, fn func(val T) (R, error)) []R {
 			continue
 		}
 		result = append(result, tmp)
-	}
-	return result
-}
-
-// SliceFieldMap take field map from refs slice
-func SliceFieldMap[T any, R comparable](refs []T, fn func(val T) R) map[R]T {
-	var result = make(map[R]T)
-	for _, v := range refs {
-		result[fn(v)] = v
-	}
-	return result
-}
-
-// SliceFieldMapWithKey take field map with customed key from refs slice
-func SliceFieldMapWithKey[T any, K, R comparable](refs []T, fn func(val T) (K, R)) map[K]R {
-	var result = make(map[K]R)
-	for _, v := range refs {
-		k, r := fn(v)
-		result[k] = r
-	}
-	return result
-}
-
-// SliceFieldFilteredMap take field map from refs slice by filtered
-func SliceFieldFilteredMap[T any, R comparable](refs []T, fn func(val T) (R, error)) map[R]T {
-	var result = make(map[R]T)
-	for _, v := range refs {
-		tmp, err := fn(v)
-		if err != nil {
-			continue
-		}
-		result[tmp] = v
 	}
 	return result
 }
@@ -473,4 +429,17 @@ func MaxInt(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// MapFieldFilteredSlice take field slice from refs map by filtered
+func MapFieldFilteredSlice[K comparable, R any, T any](refs map[K]R, fn func(key K, val R) (T, error)) []T {
+	var result []T
+	for k, r := range refs {
+		tmp, err := fn(k, r)
+		if err != nil {
+			continue
+		}
+		result = append(result, tmp)
+	}
+	return result
 }
