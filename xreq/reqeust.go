@@ -1,13 +1,11 @@
-package xhttp
+package xreq
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"encoding/xml"
-	"fmt"
 	"io"
-	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -15,18 +13,17 @@ import (
 	"strings"
 
 	"github.com/fyf2173/ysdk-go/xctx"
-	"github.com/fyf2173/ysdk-go/xlog"
 )
 
 const (
 	HeaderTraceId = "Trace-Id"
 )
 
-const DefaultRespSize = 500 * 1024 // 单位Kb
+const DefaultRespSize = 500 * 1024 // unit Kb
 
-type Option func(*http.Request)
+type ReqOption func(*http.Request)
 
-func SetRequestHeader(key, value string) Option {
+func SetRequestHeader(key, value string) ReqOption {
 	return func(request *http.Request) {
 		request.Header.Set(key, value)
 	}
@@ -40,21 +37,21 @@ var (
 	SetContentTypeText     = SetContentType("text/plain; charset=utf-8")
 )
 
-// SetContentType 设置请求头Content-Type类型
-func SetContentType(contentType string) Option {
+// SetContentType set request content type.
+func SetContentType(contentType string) ReqOption {
 	return func(request *http.Request) {
 		request.Header.Set("Content-Type", contentType)
 	}
 }
 
-func SetTraceId(ctx context.Context) Option {
+func SetTraceId(ctx context.Context) ReqOption {
 	return func(req *http.Request) {
 		req.Header.Set(HeaderTraceId, xctx.CtxId(ctx))
 	}
 }
 
-// SetRequestBody 设置请求参数
-func SetRequestBody(body io.Reader) Option {
+// SetRequestBody set request body.
+func SetRequestBody(body io.Reader) ReqOption {
 	return func(req *http.Request) {
 		rc, ok := body.(io.ReadCloser)
 		if !ok && body != nil {
@@ -107,7 +104,7 @@ func SetRequestBody(body io.Reader) Option {
 	}
 }
 
-func JsonBody(params interface{}) Option {
+func JsonBody(params interface{}) ReqOption {
 	return func(req *http.Request) {
 		SetContentTypeJson(req)
 		b, _ := json.Marshal(params)
@@ -115,17 +112,17 @@ func JsonBody(params interface{}) Option {
 	}
 }
 
-// FromdataBody 文件表单提交(multipart/form-data)
-func FromdataBody(params map[string]string, files ...*os.File) Option {
+// FromdataBody submit multipart/form-data.
+func FromdataBody(params map[string]string, files ...*os.File) ReqOption {
 	return func(req *http.Request) {
-		var rb = &bytes.Buffer{} // 创建一个buffer
+		rb := &bytes.Buffer{} // create a new buffer
 		w := multipart.NewWriter(rb)
 		for _, fi := range files {
-			fw, err := w.CreateFormFile("files", fi.Name()) // 自定义文件名，发送文件流
+			fw, err := w.CreateFormFile("files", fi.Name()) // custom file name
 			if err != nil {
 				panic(err)
 			}
-			// 把文件内容，复制到fw中
+			// copy file content to buffer
 			if _, err := io.Copy(fw, fi); err != nil {
 				panic(err)
 			}
@@ -134,14 +131,14 @@ func FromdataBody(params map[string]string, files ...*os.File) Option {
 		for k, v := range params {
 			w.WriteField(k, v)
 		}
-		w.Close() // 很重要，一定要关闭写入，不然服务端会报EOF错误，而且度不到数据
+		w.Close() // close writer, very important, otherwise the request will not be sent
 		SetContentType(w.FormDataContentType())(req)
 		SetRequestBody(rb)(req)
 	}
 }
 
-// FormBody 普通表单提交(application/x-www-form-urlencoded)
-func FormBody(params map[string]string) Option {
+// FormBody submit application/x-www-form-urlencoded.
+func FormBody(params map[string]string) ReqOption {
 	return func(req *http.Request) {
 		var form url.Values
 		for k, v := range params {
@@ -166,43 +163,4 @@ type XmlResponse struct{}
 
 func (xr *XmlResponse) Unmarshal(src []byte, dst interface{}) error {
 	return xml.Unmarshal(src, &dst)
-}
-
-func Request(ctx context.Context, method, link string, params interface{}, resp IResponse, ops ...Option) error {
-	xlog.Info(ctx, fmt.Sprintf(">>> 开始请求【[%s]link=%s】", method, link), slog.Any("params", params))
-	req, err := http.NewRequest(method, link, nil)
-	if err != nil {
-		return err
-	}
-	ops = append(ops, SetTraceId(ctx))
-	if params != nil {
-		ops = append(ops, JsonBody(params))
-	}
-	for _, op := range ops {
-		op(req)
-	}
-	response, err := http.DefaultClient.Do(req)
-	if err != nil {
-		xlog.Error(ctx, err, slog.String("method", method), slog.String("link", link))
-		return err
-	}
-
-	if response.StatusCode != 200 {
-		xlog.Info(ctx, fmt.Sprintf("[%s]%s:%d", method, link, response.StatusCode))
-		return fmt.Errorf("errorstatus:%d", response.StatusCode)
-	}
-	defer response.Body.Close()
-	bodyBytes, err := io.ReadAll(response.Body)
-	if err != nil {
-		xlog.Error(ctx, err)
-		return err
-	}
-	if response.ContentLength <= DefaultRespSize && response.ContentLength > 0 {
-		xlog.Info(ctx, "trace response", slog.String("response", string(bodyBytes)))
-	}
-	xlog.Info(ctx, fmt.Sprintf(">>> 结束请求[%s]%s", method, link), slog.Int64("content_length", response.ContentLength))
-	if resp == nil {
-		return nil
-	}
-	return resp.Unmarshal(bodyBytes, resp)
 }

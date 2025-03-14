@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/fyf2173/ysdk-go/xhttp"
+	"github.com/fyf2173/ysdk-go/xreq"
 )
 
 const (
@@ -43,7 +43,7 @@ func (al *RobotAlert) SendText(ctx context.Context, content string) error {
 		},
 	}
 
-	if err := xhttp.Request(ctx, "POST", al.Url(), req, nil); err != nil {
+	if err := xreq.NewClientDefault().Request(ctx, "POST", al.Url(), req, nil); err != nil {
 		return err
 	}
 	return nil
@@ -58,7 +58,7 @@ func (al *RobotAlert) SendMarkdown(ctx context.Context, content string) error {
 		},
 	}
 
-	if err := xhttp.Request(ctx, "POST", al.Url(), req, nil); err != nil {
+	if err := xreq.NewClientDefault().Request(ctx, "POST", al.Url(), req, nil); err != nil {
 		return err
 	}
 	return nil

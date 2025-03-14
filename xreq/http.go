@@ -1,4 +1,4 @@
-package xhttp
+package xreq
 
 import (
 	"context"
@@ -12,14 +12,14 @@ import (
 	"github.com/fyf2173/ysdk-go/xlog"
 )
 
-type DefaultClient struct {
+type Client struct {
 	http.Client
 }
 
-type ClientOption func(client *DefaultClient)
+type CliOption func(client *Client)
 
-func ClientCertOption(cert, key []byte) ClientOption {
-	return func(client *DefaultClient) {
+func ClientCertOption(cert, key []byte) CliOption {
+	return func(client *Client) {
 		transport := http.Transport{MaxIdleConnsPerHost: 100}
 		tmpCert, err := tls.X509KeyPair(cert, key)
 		if err != nil {
@@ -39,16 +39,16 @@ func ClientCertOption(cert, key []byte) ClientOption {
 	}
 }
 
-func NewClientDefault(ops ...ClientOption) *DefaultClient {
-	var client = &DefaultClient{Client: http.Client{}}
+func NewClientDefault(ops ...CliOption) *Client {
+	client := &Client{Client: *http.DefaultClient}
 	for _, v := range ops {
 		v(client)
 	}
 	return client
 }
 
-func (dc *DefaultClient) Request(ctx context.Context, method, link string, params interface{}, resp IResponse, ops ...Option) error {
-	xlog.Info(ctx, fmt.Sprintf(">>> 开始请求【[%s]link=%s】", method, link), slog.Any("params", params))
+func (c *Client) Request(ctx context.Context, method, link string, params interface{}, resp IResponse, ops ...ReqOption) error {
+	xlog.Debug(ctx, fmt.Sprintf(">>> start request【[%s]link=%s】", method, link), slog.Any("params", params))
 	req, err := http.NewRequest(method, link, nil)
 	if err != nil {
 		return err
@@ -60,14 +60,14 @@ func (dc *DefaultClient) Request(ctx context.Context, method, link string, param
 	for _, op := range ops {
 		op(req)
 	}
-	response, err := dc.Client.Do(req)
+	response, err := c.Client.Do(req)
 	if err != nil {
 		xlog.Error(ctx, err, slog.String("method", method), slog.String("link", link))
 		return err
 	}
 
-	if response.StatusCode != 200 {
-		xlog.Info(ctx, fmt.Sprintf("[%s]%s:%d", method, link, response.StatusCode))
+	if response.StatusCode <= 200 || response.StatusCode >= 300 {
+		xlog.Debug(ctx, fmt.Sprintf("[%s]%s:%d", method, link, response.StatusCode))
 		return fmt.Errorf("errorstatus:%d", response.StatusCode)
 	}
 	defer response.Body.Close()
@@ -77,9 +77,9 @@ func (dc *DefaultClient) Request(ctx context.Context, method, link string, param
 		return err
 	}
 	if response.ContentLength <= DefaultRespSize && response.ContentLength > 0 {
-		xlog.Info(ctx, "trace response", slog.String("response", string(bodyBytes)))
+		xlog.Debug(ctx, "trace response", slog.String("response", string(bodyBytes)))
 	}
-	xlog.Info(ctx, fmt.Sprintf(">>> 结束请求[%s]%s", method, link), slog.Int64("content_length", response.ContentLength))
+	xlog.Debug(ctx, fmt.Sprintf(">>> end request [%s]%s", method, link), slog.Int64("content_length", response.ContentLength))
 	if resp == nil {
 		return nil
 	}
