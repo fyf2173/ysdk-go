@@ -66,7 +66,7 @@ func (c *Client) Request(ctx context.Context, method, link string, params interf
 		return err
 	}
 
-	if response.StatusCode <= 200 || response.StatusCode >= 300 {
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		xlog.Debug(ctx, fmt.Sprintf("[%s]%s:%d", method, link, response.StatusCode))
 		return fmt.Errorf("errorstatus:%d", response.StatusCode)
 	}
